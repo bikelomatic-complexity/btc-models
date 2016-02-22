@@ -37,7 +37,6 @@
     "ajv": "^3.7.1",
     "backbone": "^1.2.3",
     "backbone-pouch": "git+https://github.com/jo/backbone-pouch.git#5aef445",
-    "lodash": "^4.5.1",
     "underscore": "^1.8.3"
   },
   "devDependencies": {
