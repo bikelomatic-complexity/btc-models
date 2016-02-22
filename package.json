@@ -1,6 +1,6 @@
 {
   "name": "btc-models",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Shared models and validation for the Bicycle Touring Companion",
   "scripts": {
     "prepublish": "babel src -d lib --copy-files",
