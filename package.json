@@ -47,6 +47,7 @@
     "docco": "^0.7.0",
     "esformatter": "^0.9.1",
     "esformatter-ignore": "^0.1.3",
+    "eslint": "^2.2.0",
     "fs-tools": "^0.2.11",
     "mocha": "^2.4.5",
     "nyc": "^5.6.0"
