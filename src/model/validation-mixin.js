@@ -27,7 +27,7 @@ export default function( schema ) {
 
   // Instantiate a new schema compiler per mixin. It will be closed over by
   // the validate function in the mixin.
-  const ajv = Ajv();
+  const ajv = Ajv( { allErrors: true } );
 
   return {
     validate: function( attributes, options ) {
