@@ -10,4 +10,7 @@ describe( 'index.js', function() {
     expect( index ).to.have.property( 'User' );
     expect( index ).to.have.property( 'UserCollection' );
   } );
+  it( 'should export Login', function() {
+    expect( index ).to.have.property( 'Login' );
+  } );
 } );
