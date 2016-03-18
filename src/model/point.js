@@ -25,7 +25,7 @@ import { CouchModel, CouchCollection, keysBetween } from './base';
 import docuri from 'docuri';
 import ngeohash from 'ngeohash';
 import normalize from 'to-id';
-import uuid from 'node-uuid';
+import nuuid from 'node-uuid';
 
 /*esfmt-ignore-start*/
 export const serviceTypes = {
@@ -74,7 +74,6 @@ export function display( type ) {
 }
 
 export const pointId = docuri.route( 'point/:type/:name/:geohash' );
-export const pointCommentId = docuri.route( 'point/:type/:name/:geohash/comment/:uuid' );
 
 export const Point = CouchModel.extend( {
   idAttribute: '_id',
@@ -241,26 +240,41 @@ const COMMENT_MAX_LENGTH = 140;
 export const Comment = CouchModel.extend( {
   idAttribute: '_id',
 
+  constructor: function( pointId, attributes, options ) {
+    const uuid = nuuid.v1();
+    const commentId = pointId + '/comment/' + uuid;
+    CouchModel.call( this, { _id: commentId, uuid, ...attributes }, options );
+  },
+
   schema: {
-    'username': {
-      'type': 'string'
+    type: 'object',
+    additionalProperties: false,
+    properties: {
+      username: {
+        'type': 'string'
+      },
+      text: {
+        'type': 'string',
+        'maxLength': COMMENT_MAX_LENGTH
+      },
+      rating: {
+        type: 'integer',
+        minimum: 1,
+        maximum: 5
+      },
+      uuid: {
+        type: 'string'
+      }
     },
-    'text': {
-      'type': 'string',
-      'maxLength': COMMENT_MAX_LENGTH
-    },
-    'rating': {
-      'type': 'integer',
-      'minimum': 1,
-      'maximum': 5
-    }
+    required: [
+      'username',
+      'text',
+      'rating',
+      'uuid'
+    ]
   }
 }, {
-  MAX_LENGTH: COMMENT_MAX_LENGTH,
-
-  create: function() {
-    return new Comment( { _id: uuid.v1() } );
-  }
+  MAX_LENGTH: COMMENT_MAX_LENGTH
 } );
 
 mixinValidation( Comment );

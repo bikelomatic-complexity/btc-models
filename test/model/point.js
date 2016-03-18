@@ -5,9 +5,10 @@ import promised from 'chai-as-promised';
 chai.use( promised );
 
 import PouchDB from 'pouchdb';
+import { repeat } from 'lodash';
 
 import { connect } from '../../src/connect';
-import { Service, Alert, PointCollection } from '../../src/model/point';
+import { Service, Alert, PointCollection, Comment } from '../../src/model/point';
 
 const val = { validate: true };
 
@@ -219,6 +220,49 @@ describe( 'Point models and collections', function() {
           amenities: [ 'restaurant' ],
           description: 'It is a restaurant'
         }, { wait: true } );
+      } );
+    } );
+  } );
+
+  describe( 'Comment', function() {
+    beforeEach( function() {
+      this.pointId = 'point/service/joe-s-pizzeria/s00twy01m';
+      this.comment = new Comment( this.pointId, {
+        username: 'joe',
+        text: 'The pizza is pretty good',
+        rating: 4
+      } );
+    } );
+    describe( 'constructor()', function() {
+      it( 'should create a new Comment with an id and uuid', function() {
+        expect( this.comment.id ).to.match( new RegExp( this.pointId + '/comment' ) );
+        expect( this.comment.get( 'uuid' ) ).to.exist;
+      } );
+    } );
+    describe( 'validate()', function() {
+      it( 'should validate it\'s attributes', function() {
+        const errors = this.comment.validate( this.comment.attributes );
+        expect( errors ).to.not.exist;
+      } );
+      it( 'should limit comments to 140 characters', function() {
+        this.comment.set( 'text', repeat( 'a', 140 ), val );
+        expect( this.comment.validationError ).to.not.exist;
+
+        this.comment.set( 'text', repeat( 'a', 141 ), val );
+        expect( this.comment.validationError ).to.exist;
+      } );
+    } );
+    describe( 'save()', function() {
+      it( 'should save to PouchDB', function() {
+        const ConnectedComment = connect( this.pouch, Comment );
+        const comment = new ConnectedComment( this.pointId, {
+          username: 'joe',
+          text: 'The pizza is pretty good',
+          rating: 4
+        } );
+        comment.save();
+        const doc = this.pouch.get( comment.id );
+        expect( doc ).to.eventually.have.property( 'username', 'joe' );
       } );
     } );
   } );
