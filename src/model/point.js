@@ -191,12 +191,14 @@ mixinValidation( Service );
 
 export const Alert = Point.extend( {
   specify: function( name, location ) {
-    Point.prototype.call( this, 'alert', name, location );
+    Point.prototype.specify.call( this, 'alert', name, location );
   },
 
   schema: merge( {}, Point.prototype.schema, {
-    'type': {
-      'enum': keys( alertTypes )
+    properties: {
+      type: {
+        enum: keys( alertTypes )
+      }
     }
   } )
 } );

@@ -7,7 +7,7 @@ chai.use( promised );
 import PouchDB from 'pouchdb';
 
 import { connect } from '../../src/connect';
-import { Service } from '../../src/model/point';
+import { Service, Alert } from '../../src/model/point';
 
 const val = { validate: true };
 
@@ -106,6 +106,49 @@ describe( 'Point models and collections', function() {
           expect( doc ).to.be.rejected.and.notify( done );
         };
         service.save( {}, { success: testDestroy, error: testDestroy } );
+      } );
+    } );
+  } );
+
+  describe( 'Alert', function() {
+    beforeEach( function() {
+      this.alert = new Alert( {
+        name: 'Flooding on I90',
+        location: [ 0, 0 ],
+        type: 'flooding',
+        description: 'There\'s some flooding near Utica'
+      } );
+    } );
+    afterEach( function() {
+      this.alert.clear();
+    } );
+    describe( 'validate()', function() {
+      it( 'should validate its attributes', function() {
+        const errors = this.alert.validate( this.alert.attributes );
+        console.log( errors );
+        expect( errors ).to.not.exist;
+      } );
+      it( 'should validate an alert type', function() {
+        this.alert.set( 'type', 'grocery', val );
+        expect( this.alert.validationError ).to.exist;
+
+        this.alert.set( 'type', 'detour', val );
+        expect( this.alert.validationError ).to.not.exist;
+      } );
+    } );
+    describe( 'specify()', function() {
+      it( 'should specify an id when name and locatoin are in args', function() {
+        const alert = new Alert();
+        alert.specify( 'Flooding on I90', [ 1, 1 ] );
+        expect( alert.id ).to.exist.and.to.match( /alert\/flooding/ );
+      } );
+      it( 'should specify an id when name and location are in attributes', function() {
+        const alert = new Alert( {
+          name: 'Flooding on I90',
+          location: [ 1, 1 ]
+        } );
+        alert.specify();
+        expect( alert.id ).to.exist.and.to.match( /alert\/flooding/ );
       } );
     } );
   } );
