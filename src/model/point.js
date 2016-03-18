@@ -208,20 +208,31 @@ mixinValidation( Alert );
 export const PointCollection = CouchCollection.extend( {
   initialize: function( models, options ) {
     CouchCollection.prototype.initialize.apply( this, arguments );
+
+    const opts = options || {};
+
     // const { bbox } = options; // For later, to get points in a bbox
     this.pouch = {
       options: {
-        allDocs: { include_docs: true, ...keysBetween( '/point' ) }
+        allDocs: { include_docs: true, ...keysBetween( 'point/' ) }
       }
     };
+
+    if ( opts.connect ) {
+      this.service = opts.connect( Service.extend() );
+      this.alert = opts.connect( Alert.extend() );
+    } else {
+      this.service = Service;
+      this.alert = Alert;
+    }
   },
 
   model: function( attributes, options ) {
-    const parts = pointId( attributes.id );
+    const parts = pointId( attributes._id );
     if ( parts.type === 'service' ) {
-      return new Service( attributes, options );
+      return new ( options.collection.service) ( attributes, options );
     } else if ( parts.type === 'alert' ) {
-      return new Alert( attributes, options );
+      return new ( options.collection.alert) ( attributes, options );
     } else {
       throw 'A point must be either a service or alert';
     }

@@ -6,8 +6,8 @@ chai.use( promised );
 
 import PouchDB from 'pouchdb';
 
-import { connect } from '../../src/connect';
-import { Service, Alert } from '../../src/model/point';
+import { connect, connectOne } from '../../src/connect';
+import { Service, Alert, PointCollection } from '../../src/model/point';
 
 const val = { validate: true };
 
@@ -125,7 +125,6 @@ describe( 'Point models and collections', function() {
     describe( 'validate()', function() {
       it( 'should validate its attributes', function() {
         const errors = this.alert.validate( this.alert.attributes );
-        console.log( errors );
         expect( errors ).to.not.exist;
       } );
       it( 'should validate an alert type', function() {
@@ -149,6 +148,83 @@ describe( 'Point models and collections', function() {
         } );
         alert.specify();
         expect( alert.id ).to.exist.and.to.match( /alert\/flooding/ );
+      } );
+    } );
+
+  } );
+  describe( 'PointCollection', function() {
+    beforeEach( function() {
+      this.points = new PointCollection( [ {
+        _id: 'point/alert/flooding-on-i90/s00twy01m',
+        name: 'Flooding on I90',
+        location: [ 1, 1 ]
+      }, {
+        _id: 'point/service/joe-s-pizzeria/s00twy01m',
+        name: 'Joe\'s Pizzeria',
+        location: [ 1, 1 ]
+      } ] );
+    } );
+    describe( 'model()', function() {
+      it( 'should construct the right models', function() {
+        expect( this.points.models[ 0 ] ).to.be.an.instanceof( Alert );
+        expect( this.points.models[ 1 ] ).to.be.an.instanceof( Service );
+      } );
+    } );
+    describe( 'fetch()', function( done ) {
+      it( 'should fetch points from PouchDB', function( done ) {
+        const ConnectedPointCollection = PointCollection.extend();
+        const ConnectedService = Service.extend();
+        connect( this.pouch, ConnectedPointCollection, ConnectedService );
+
+        const service = new ConnectedService( {
+          name: 'Joe\'s Pizzeria',
+          location: [ 0, 0 ],
+          type: 'restaurant',
+          amenities: [ 'restaurant' ],
+          description: 'It is a restaurant'
+        } );
+        service.specify();
+
+        service.save( {}, {
+          success: ( ) => {
+            const points = new ConnectedPointCollection();
+            points.fetch( {
+              success: collection => {
+                expect( collection ).to.have.lengthOf( 1 );
+                done();
+              },
+              error: err => done( err )
+            } );
+          },
+          error: err => done( err )
+        } );
+      } );
+    } );
+    describe( 'create()', function() {
+      it( 'should create and save points to PouchDB', function( done ) {
+        const ConnectedPointCollection = PointCollection.extend();
+        connect( this.pouch, ConnectedPointCollection );
+        const points = new ConnectedPointCollection( [], {
+          connect: connectOne.bind( null, this.pouch )
+        } );
+        points.once( 'add', ( ) => {
+          points.reset();
+          points.fetch( {
+            success: points => {
+              expect( points ).to.have.lengthOf( 1 );
+              done();
+            },
+            error: err => done( err )
+          } );
+        } );
+        points.create( {
+          _id: 'point/service/joe-s-pizzeria/s00twy01m',
+          name: 'Joe\'s Pizzeria',
+          location: [ 0, 0 ],
+          type: 'restaurant',
+          amenities: [ 'restaurant' ],
+          description: 'It is a restaurant'
+        }, { wait: true } );
       } );
     } );
   } );

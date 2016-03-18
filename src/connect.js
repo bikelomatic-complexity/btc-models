@@ -9,3 +9,8 @@ export function connect( pouch, ...klasses ) {
     klass.prototype.sync = sync( { db: pouch } );
   } );
 }
+
+export function connectOne( pouch, klass ) {
+  klass.prototype.sync = sync( { db: pouch } );
+  return klass;
+}
