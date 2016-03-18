@@ -85,7 +85,7 @@ export const Point = CouchModel.extend( {
   },
 
   specify: function( type, name, location ) {
-    if( name ) {
+    if ( name ) {
       const [lat, lng] = location;
       const _id = pointId( {
         type: type,
@@ -94,7 +94,7 @@ export const Point = CouchModel.extend( {
       } );
       this.set( { _id, type, name, location } );
     } else {
-      const { name, location } = this.attributes;
+      const {name, location} = this.attributes;
       const [lat, lng] = location;
       const _id = pointId( {
         type: type,
@@ -154,13 +154,13 @@ export const Service = Point.extend( {
   schema: merge( {}, Point.prototype.schema, {
     properties: {
       type: {
-        enum: keys(serviceTypes)
+        enum: keys( serviceTypes )
       },
       amenities: {
         type: 'array',
         items: {
           type: 'string',
-          enum: keys(serviceTypes)
+          enum: keys( serviceTypes )
         }
       },
       address: {
@@ -196,7 +196,7 @@ export const Alert = Point.extend( {
 
   schema: merge( {}, Point.prototype.schema, {
     'type': {
-      'enum': keys(alertTypes)
+      'enum': keys( alertTypes )
     }
   } )
 } );
@@ -206,22 +206,19 @@ mixinValidation( Alert );
 export const PointCollection = CouchCollection.extend( {
   initialize: function( models, options ) {
     CouchCollection.prototype.initialize.apply( this, arguments );
-    const { center, radius } = options; // For later
+    // const { bbox } = options; // For later, to get points in a bbox
     this.pouch = {
       options: {
-        allDocs: {
-          include_docs: true,
-          ...keysBetween( '/point' )
-        }
+        allDocs: { include_docs: true, ...keysBetween( '/point' ) }
       }
     };
   },
 
   model: function( attributes, options ) {
     const parts = pointId( attributes.id );
-    if( parts.type === 'service' ) {
+    if ( parts.type === 'service' ) {
       return new Service( attributes, options );
-    } else if( parts.type === 'alert' ) {
+    } else if ( parts.type === 'alert' ) {
       return new Alert( attributes, options );
     } else {
       throw 'A point must be either a service or alert';
@@ -268,8 +265,8 @@ export const CommentCollection = CouchCollection.extend( {
     this.pouch = {
       options: {
         allDocs: {
-          include_docs: true,
-          ...keysBetween( this.pointId + '/comment' )
+          ...keysBetween( this.pointId + '/comment' ),
+          include_docs: true
         }
       }
     };
