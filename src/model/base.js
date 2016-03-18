@@ -20,6 +20,15 @@
 import { Model, Collection } from 'backbone';
 import { omit, union, isArray, intersection, keys, extend } from 'underscore';
 
+import { map } from 'lodash';
+
+export function keysBetween( base ) {
+  return {
+    startkey: base,
+    endkey: base + '\uffff'
+  };
+}
+
 // Special keys that are reserved by serialized CouchDB documents
 const baseSafeguard = [ '_id', '_rev' ];
 
@@ -64,18 +73,18 @@ export const CouchModel = Model.extend( {
 
     options || ( options = {} );
 
-    if ( !options.force ) {
-      // Uncomment to log keys that we omit from super.set()
-      const omitted = intersection( keys( attrs ), this.safeguard );
-
-      // Actually omit safeguarded keys
-      attrs = omit( attrs, this.safeguard );
-
-      if ( omitted.length > 0 ) {
-        throw new Error( 'attempted override of safeguarded keys: ' +
-          omitted.toString() );
-      }
-    }
+    // if ( !options.force ) {
+    //   // Uncomment to log keys that we omit from super.set()
+    //   const omitted = intersection( keys( attrs ), this.safeguard );
+    //
+    //   // Actually omit safeguarded keys
+    //   attrs = omit( attrs, this.safeguard );
+    // 
+    //   if ( omitted.length > 0 ) {
+    //     throw new Error( 'attempted override of safeguarded keys: ' +
+    //       omitted.toString() );
+    //   }
+    // }
 
     return Model.prototype.set.call( this, attrs, options );
   }
@@ -91,5 +100,9 @@ export const CouchCollection = Collection.extend( {
     return Collection.prototype.fetch.call( this, extend( {}, options, {
       force: true
     } ) );
+  },
+
+  parse: function( response, options ) {
+    return map( response.rows, 'doc' );
   }
 } );
