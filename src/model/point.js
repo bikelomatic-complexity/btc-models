@@ -209,8 +209,6 @@ export const PointCollection = CouchCollection.extend( {
   initialize: function( models, options ) {
     CouchCollection.prototype.initialize.apply( this, arguments );
 
-    const opts = options || {};
-
     // const { bbox } = options; // For later, to get points in a bbox
     this.pouch = {
       options: {
@@ -218,21 +216,21 @@ export const PointCollection = CouchCollection.extend( {
       }
     };
 
-    if ( opts.connect ) {
-      this.service = opts.connect( Service.extend() );
-      this.alert = opts.connect( Alert.extend() );
-    } else {
-      this.service = Service;
-      this.alert = Alert;
-    }
+    const connect = this.connect;
+    const database = this.database;
+    this.service = connect ? connect( database, Service ) : Service;
+    this.alert = connect ? connect( database, Alert ) : Alert;
   },
 
   model: function( attributes, options ) {
     const parts = pointId( attributes._id );
-    if ( parts.type === 'service' ) {
-      return new ( options.collection.service) ( attributes, options );
-    } else if ( parts.type === 'alert' ) {
-      return new ( options.collection.alert) ( attributes, options );
+    const map = {
+      'service': options.collection.service,
+      'alert': options.collection.alert
+    };
+    const constructor = map[ parts.type ];
+    if ( constructor ) {
+      return new constructor( attributes, options );
     } else {
       throw 'A point must be either a service or alert';
     }
