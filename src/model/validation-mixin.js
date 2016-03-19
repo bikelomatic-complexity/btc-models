@@ -18,21 +18,28 @@
  */
 
 import Ajv from 'ajv';
-import { omit } from 'underscore';
-import { assign } from 'lodash';
+import { assign, omit, isArray, mergeWith } from 'lodash';
 
 // # Validation Mixin Factory
-// A function to generate a mixin that may be applied to a Backbone Model.
+// A function to generate a mixin that may be applied to a backbone model.
 // To generate the mixin, you must supply a conformant JSON schema as JSON.
-export function ValidationMixin( schema ) {
-
-  // Instantiate a new schema compiler per mixin. It will be closed over by
-  // the validate function in the mixin.
+//
+// We are using [ajv](https://github.com/epoberezkin/ajv) to validate models.
+// Some notable configuration pieces:
+//  - allErrors: report all errors encountered instead of failing fast
+//  - useDefaults: if a default is provided, inject that into the model
+//
+// The ajv instance will be closed over by the `validate` function mixed into
+// the backbone model.
+export default function ValidationMixin( schema ) {
   const ajv = Ajv( { allErrors: true, useDefaults: true } );
 
   return {
+    // ## Validate
+    // Validate model attributes with ajv. Exclude safeguarded keys before
+    // validation (see CouchModel). Returns either an array of errors or
+    // undefined.
     validate: function( attributes, options ) {
-      // Don't validate safeguarded keys, if any!
       let attrs;
       if ( this.safeguard ) {
         attrs = omit( attributes, this.safeguard );
@@ -40,7 +47,6 @@ export function ValidationMixin( schema ) {
         attrs = attributes;
       }
 
-      // Investigate filtering safeguarded keys.
       const valid = ajv.validate( schema, attrs );
       if ( !valid ) {
         return ajv.errors;
@@ -49,9 +55,27 @@ export function ValidationMixin( schema ) {
   };
 }
 
-export default ValidationMixin;
-
+// # mixinValidation
+// Given a backbone model or collection, mix in the validation function,
+// prepared for a JSON schema. This schema must be available as JSON
+// in the model or collection's prototype.
 export function mixinValidation( modelWithSchema ) {
   const mixin = ValidationMixin( modelWithSchema.prototype.schema );
   assign( modelWithSchema.prototype, mixin );
+}
+
+// # mergeSchemas
+// In ineritance hierarchies, JSON schemas must be merged.
+// This function merges schema JSON just like lodash.merge, except we union
+// arrays together (for use with the `required` field for instance).
+export function mergeSchemas( ...schemas ) {
+  return mergeWith.apply( null, [ ...schemas, unionCustomizer ] );
+}
+
+// # unionCustomizer
+// Lodash customizer for mergeSchemas
+function unionCustomizer( objValue, srcValue ) {
+  if ( isArray( objValue ) ) {
+    return objValue.concat( srcValue );
+  }
 }

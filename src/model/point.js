@@ -17,63 +17,33 @@
  * along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { merge, keys } from 'lodash';
-
-import { mixinValidation } from './validation-mixin';
+import { mixinValidation, mergeSchemas } from './validation-mixin';
 import { CouchModel, CouchCollection, keysBetween } from './base';
+
+import { keys } from 'lodash';
 
 import docuri from 'docuri';
 import ngeohash from 'ngeohash';
 import normalize from 'to-id';
 import uuid from 'node-uuid';
 
-/*esfmt-ignore-start*/
-export const serviceTypes = {
-  'airport':           { display: 'Airport' },
-  'bar':               { display: 'Bar' },
-  'bed_and_breakfast': { display: 'Bed & Breakfast' },
-  'bike_shop':         { display: 'Bike Shop' },
-  'cabin':             { display: 'Cabin' },
-  'campground':        { display: 'Campground' },
-  'convenience_store': { display: 'Convenience Store' },
-  'cyclists_camping':  { display: 'Cyclists\' Camping' },
-  'cyclists_lodging':  { display: 'Cyclists\' Lodging' },
-  'grocery':           { display: 'Grocery' },
-  'hostel':            { display: 'Hostel' },
-  'hot_spring':        { display: 'Hot Spring' },
-  'hotel':             { display: 'Hotel' },
-  'motel':             { display: 'Motel' },
-  'information':       { display: 'Information' },
-  'library':           { display: 'Library' },
-  'museum':            { display: 'Museum' },
-  'outdoor_store':     { display: 'Outdoor Store' },
-  'rest_area':         { display: 'Rest Area' },
-  'restaurant':        { display: 'Restaurant' },
-  'restroom':          { display: 'Restroom' },
-  'scenic_area':       { display: 'Scenic Area' },
-  'state_park':        { display: 'State Park' },
-  'other':             { display: 'Other' }
-};
+// # Point Model
+// The point represents a location on the map with associated metadata, geodata,
+// and user provided data. The point is the base shared by services and alerts.
+//
+// The JSON schema stored in `Point`, and as patched by `Service` and `Alert`,
+// is the authoritative definition of the point record.
 
-export const alertTypes = {
-  'road_closure':      { display: 'Road Closure' },
-  'forest_fire':       { display: 'Forest fire' },
-  'flooding':          { display: 'Flooding' },
-  'detour':            { display: 'Detour' },
-  'other':             { display: 'Other' }
-};
-/*esfmt-ignore-end*/
-
-export function display( type ) {
-  const values = serviceTypes[ type ] || alertTypes[ type ];
-  if ( values ) {
-    return values.display;
-  } else {
-    return null;
-  }
-}
-
-export const pointId = docuri.route( 'point/:type/:name/:geohash' );
+// ## Point Model Uri
+// Points are stored in CouchDB. CouchDB documents can have rich id strings
+// to help store and access data without MapReduce jobs.
+//
+// The point model uri is composed of four parts:
+//  1. The string 'point/'`
+//  2. The type of point, either 'service' or 'alert'
+//  3. The normalized name of the point
+//  4. The point's geohash
+const pointId = docuri.route( 'point/:type/:name/:geohash' );
 
 export const Point = CouchModel.extend( {
   idAttribute: '_id',
@@ -83,6 +53,9 @@ export const Point = CouchModel.extend( {
     this.set( 'created_at', new Date().toISOString() );
   },
 
+  // ## Specify
+  // Fill in `_id` from the components of the point model uri.
+  // Pull values from `attributes` if name and location are undefined.
   specify: function( type, name, location ) {
     if ( name ) {
       const [lat, lng] = location;
@@ -105,9 +78,8 @@ export const Point = CouchModel.extend( {
   },
 
   schema: {
-    $schema: 'http://json-schema.org/draft-04/schema#',
     type: 'object',
-    additionalProperties: false, // But subclasses can merge
+    additionalProperties: false,
     properties: {
       name: {
         type: 'string'
@@ -145,12 +117,57 @@ export const Point = CouchModel.extend( {
   }
 } );
 
+// # Service Model
+// A service is a buisness or point of interest to a cyclist. A cyclist needs
+// to know where they want to stop well in advance of their travel through an
+// area. The service record must contain enough information to help the cyclist
+// make such decisions.
+//
+// The record includes contact information, and a schedule of hours of
+// operation. It is important that we store the time zone of a service, since
+// touring cyclists will cross time zones on their travels. Furthermore,
+// services of interest to touring cyclists may be seasonal: we store
+// schedules for different seasons.
+
+// ## Service Types
+// A Service may have a single type, indicating the primary purpose of the
+// buisness or point of interest. Service types may also be included in a
+// Service's amenities array.
+/*esfmt-ignore-start*/
+export const serviceTypes = {
+  'airport':           { display: 'Airport' },
+  'bar':               { display: 'Bar' },
+  'bed_and_breakfast': { display: 'Bed & Breakfast' },
+  'bike_shop':         { display: 'Bike Shop' },
+  'cabin':             { display: 'Cabin' },
+  'campground':        { display: 'Campground' },
+  'convenience_store': { display: 'Convenience Store' },
+  'cyclists_camping':  { display: 'Cyclists\' Camping' },
+  'cyclists_lodging':  { display: 'Cyclists\' Lodging' },
+  'grocery':           { display: 'Grocery' },
+  'hostel':            { display: 'Hostel' },
+  'hot_spring':        { display: 'Hot Spring' },
+  'hotel':             { display: 'Hotel' },
+  'motel':             { display: 'Motel' },
+  'information':       { display: 'Information' },
+  'library':           { display: 'Library' },
+  'museum':            { display: 'Museum' },
+  'outdoor_store':     { display: 'Outdoor Store' },
+  'rest_area':         { display: 'Rest Area' },
+  'restaurant':        { display: 'Restaurant' },
+  'restroom':          { display: 'Restroom' },
+  'scenic_area':       { display: 'Scenic Area' },
+  'state_park':        { display: 'State Park' },
+  'other':             { display: 'Other' }
+};
+/*esfmt-ignore-end*/
+
 export const Service = Point.extend( {
   specify: function( name, location ) {
     Point.prototype.specify.call( this, 'service', name, location );
   },
 
-  schema: merge( {}, Point.prototype.schema, {
+  schema: mergeSchemas( {}, Point.prototype.schema, {
     properties: {
       type: {
         enum: keys( serviceTypes )
@@ -186,14 +203,29 @@ export const Service = Point.extend( {
   } )
 } );
 
+// Apply the validation mixin to the Service model. See validation-mixin.js.
 mixinValidation( Service );
+
+// # Alert Model
+// An alert is something that might impede a cyclist's tour. When a cyclist
+// sees an alert on the map, the know to plan around it.
+
+/*esfmt-ignore-start*/
+export const alertTypes = {
+  'road_closure':      { display: 'Road Closure' },
+  'forest_fire':       { display: 'Forest fire' },
+  'flooding':          { display: 'Flooding' },
+  'detour':            { display: 'Detour' },
+  'other':             { display: 'Other' }
+};
+/*esfmt-ignore-end*/
 
 export const Alert = Point.extend( {
   specify: function( name, location ) {
     Point.prototype.specify.call( this, 'alert', name, location );
   },
 
-  schema: merge( {}, Point.prototype.schema, {
+  schema: mergeSchemas( {}, Point.prototype.schema, {
     properties: {
       type: {
         enum: keys( alertTypes )
@@ -204,19 +236,26 @@ export const Alert = Point.extend( {
 
 mixinValidation( Alert );
 
+// # Point Collection
+// A heterogeneous collection of services and alerts. PouchDB is able to fetch
+// this collection by looking for all keys starting with 'point/'.
+//
+// This also has the effect of fetching comments for points. TODO: handle
+// `Comment` in the model function.
+//
+// A connected PointCollection must be able to generate connected Alerts or
+// Services on demands. Therefore, if PointCollection is connected, connect
+// models before returning them.
 export const PointCollection = CouchCollection.extend( {
   initialize: function( models, options ) {
     CouchCollection.prototype.initialize.apply( this, arguments );
-
-    // const { bbox } = options; // For later, to get points in a bbox
     this.pouch = {
       options: {
         allDocs: { include_docs: true, ...keysBetween( 'point/' ) }
       }
     };
 
-    const connect = this.connect;
-    const database = this.database;
+    const {connect, database} = this;
     this.service = connect ? connect( database, Service ) : Service;
     this.alert = connect ? connect( database, Alert ) : Alert;
   },
@@ -236,10 +275,46 @@ export const PointCollection = CouchCollection.extend( {
   }
 } );
 
+// # Display Name for Type
+// Given a type key from either the service or alert type enumerations,
+// return the type's display string, or null if it does not exist.
+export function display( type ) {
+  const values = serviceTypes[ type ] || alertTypes[ type ];
+  if ( values ) {
+    return values.display;
+  } else {
+    return null;
+  }
+}
+
+// # Comment Model
+// Information about alerts and services encountered by cyclists is likely
+// to change with the seasons or other reasons. Cyclists planning the next leg
+// of a tour should be able to read the experiences of cyclists ahead of them.
+//
+// A comment must have both a rating and the text of the comment. Comments are
+// limited to 140 characters to ensure they do not devolve into general alert
+// or service information that should really be in the description. We really
+// want users of the Bicycle Touring Companion to provide comments verifying
+// info about points, or letting other cyclists know about changes in the
+// service or alert.
+
+// ## Comment Model Uri
+// Comments are stored in CouchDB in the same database as points. The comment
+// model uri is composed of three parts:
+//  1. The entire id of the related point
+//  2. The string 'comment/'
+//  3. A time based UUID to uniquely identify comments
+//
+// We don't use `docuri` for the comment model uris because we don't have to
+// parse them.
+
 const COMMENT_MAX_LENGTH = 140;
 export const Comment = CouchModel.extend( {
   idAttribute: '_id',
 
+  // ## Constructor
+  // Generate `_id`. `pointId` must be specified in options.
   constructor: function( attributes, options ) {
     options = options || {};
     if ( !attributes.uuid ) {
@@ -284,6 +359,8 @@ export const Comment = CouchModel.extend( {
 
 mixinValidation( Comment );
 
+// # Comment Collection
+// Fetch only comments associated with a given point.
 export const CommentCollection = CouchCollection.extend( {
   initialize: function( models, options ) {
     CouchCollection.prototype.initialize.apply( this, arguments );
