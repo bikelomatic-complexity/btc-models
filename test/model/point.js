@@ -8,7 +8,7 @@ import PouchDB from 'pouchdb';
 import { repeat } from 'lodash';
 
 import { connect } from '../../src/connect';
-import { Service, Alert, PointCollection, Comment } from '../../src/model/point';
+import { Service, Alert, PointCollection, Comment, CommentCollection } from '../../src/model/point';
 
 const val = { validate: true };
 
@@ -267,6 +267,58 @@ describe( 'Point models and collections', function() {
         comment.save();
         const doc = this.pouch.get( comment.id );
         expect( doc ).to.eventually.have.property( 'username', 'joe' );
+      } );
+    } );
+  } );
+
+  describe( 'CommentCollection', function() {
+    beforeEach( function() {
+      const pointId = this.pointId = 'point/service/joe-s-pizzeria/s00twy01m';
+      this.comments = new CommentCollection( [], { pointId } );
+    } );
+    describe( 'initialize()', function() {
+      it( 'should set pointId as an instance variable', function() {
+        expect( this.comments ).to.have.property( 'pointId', this.pointId );
+      } );
+    } );
+    describe( 'model()', function() {
+      it( 'should return Comment models', function() {
+        this.comments.add( {
+          username: 'joe',
+          text: 'The pizza is pretty good!',
+          rating: 4
+        } );
+        expect( this.comments.models[ 0 ] ).to.be.an.instanceof( Comment )
+          .and.to.have.deep.property( 'attributes.rating', 4 );
+      } );
+    } );
+    describe( 'fetch()', function() {
+      it( 'should fetch comments from PouchDB', function( done ) {
+        const pointId = this.pointId;
+        const CCommentCollection = connect( this.pouch, CommentCollection );
+
+        const comments = new CCommentCollection( [], { pointId } );
+        comments.create( {
+          username: 'joe',
+          text: 'joe comment',
+          rating: 4
+        } );
+        comments.create( {
+          username: 'bob',
+          text: 'bob comment',
+          rating: 4
+        }, { wait: true } );
+
+        comments.once( 'add', ( ) => {
+          comments.reset();
+          comments.fetch( {
+            success: comments => {
+              expect( comments.models ).to.have.lengthOf( 2 );
+              done();
+            },
+            error: err => done( err )
+          } );
+        } );
       } );
     } );
   } );

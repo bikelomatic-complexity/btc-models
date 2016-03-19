@@ -245,7 +245,7 @@ export const Comment = CouchModel.extend( {
     if ( !attributes.uuid ) {
       attributes.uuid = uuid.v1();
     }
-    if ( !attributes._id ) {
+    if ( !attributes._id && options.pointId ) {
       attributes._id = options.pointId + '/comment/' + attributes.uuid;
     }
     CouchModel.apply( this, arguments );
@@ -304,7 +304,7 @@ export const CommentCollection = CouchCollection.extend( {
   },
 
   model: function( attributes, options ) {
-    const pointId = options.collection.pointId;
-    return new ( this.comment) (attributes, { pointId, ...options } );
+    const {comment, pointId} = options.collection;
+    return new comment( attributes, { pointId, ...options } );
   }
 } );
