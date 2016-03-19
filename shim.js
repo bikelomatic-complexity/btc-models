@@ -1,7 +1,7 @@
 /*global process __dirname require*/
 
 var walkSync = require('fs-tools').walkSync,
-    contains = require('underscore').contains,
+    includes = require('lodash/includes'),
     path = require('path');
 
 var resolve = path.resolve,
@@ -27,7 +27,7 @@ try {
   var es5src = resolve( __dirname, 'lib' );
 
   walkSync( es6src, '\.js$', function( path ) {
-    if ( !contains( [ ], basename( path ) ) ) {
+    if ( !includes( [ ], basename( path ) ) ) {
       var slug = relative( es6src, path );
       var file = resolve( es5src, slug );
 

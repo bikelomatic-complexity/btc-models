@@ -18,7 +18,7 @@
  */
 
 import Ajv from 'ajv';
-import { assign, omit, isArray, mergeWith } from 'lodash';
+import { assign, omit, merge, union } from 'lodash';
 
 // # Validation Mixin Factory
 // A function to generate a mixin that may be applied to a backbone model.
@@ -68,14 +68,9 @@ export function mixinValidation( modelWithSchema ) {
 // In ineritance hierarchies, JSON schemas must be merged.
 // This function merges schema JSON just like lodash.merge, except we union
 // arrays together (for use with the `required` field for instance).
-export function mergeSchemas( ...schemas ) {
-  return mergeWith.apply( null, [ ...schemas, unionCustomizer ] );
-}
+export function mergeSchemas( parent, mine ) {
+  const intermediate = merge( {}, parent, mine );
+  const required = union( parent.required, mine.required );
 
-// # unionCustomizer
-// Lodash customizer for mergeSchemas
-function unionCustomizer( objValue, srcValue ) {
-  if ( isArray( objValue ) ) {
-    return objValue.concat( srcValue );
-  }
+  return assign( {}, intermediate, { required } );
 }

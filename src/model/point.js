@@ -167,7 +167,7 @@ export const Service = Point.extend( {
     Point.prototype.specify.call( this, 'service', name, location );
   },
 
-  schema: mergeSchemas( {}, Point.prototype.schema, {
+  schema: mergeSchemas( Point.prototype.schema, {
     properties: {
       type: {
         enum: keys( serviceTypes )
@@ -225,7 +225,7 @@ export const Alert = Point.extend( {
     Point.prototype.specify.call( this, 'alert', name, location );
   },
 
-  schema: mergeSchemas( {}, Point.prototype.schema, {
+  schema: mergeSchemas( Point.prototype.schema, {
     properties: {
       type: {
         enum: keys( alertTypes )
