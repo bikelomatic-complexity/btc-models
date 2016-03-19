@@ -25,7 +25,7 @@ import { CouchModel, CouchCollection, keysBetween } from './base';
 import docuri from 'docuri';
 import ngeohash from 'ngeohash';
 import normalize from 'to-id';
-import nuuid from 'node-uuid';
+import uuid from 'node-uuid';
 
 /*esfmt-ignore-start*/
 export const serviceTypes = {
@@ -240,10 +240,15 @@ const COMMENT_MAX_LENGTH = 140;
 export const Comment = CouchModel.extend( {
   idAttribute: '_id',
 
-  constructor: function( pointId, attributes, options ) {
-    const uuid = nuuid.v1();
-    const commentId = pointId + '/comment/' + uuid;
-    CouchModel.call( this, { _id: commentId, uuid, ...attributes }, options );
+  constructor: function( attributes, options ) {
+    options = options || {};
+    if ( !attributes.uuid ) {
+      attributes.uuid = uuid.v1();
+    }
+    if ( !attributes._id ) {
+      attributes._id = options.pointId + '/comment/' + attributes.uuid;
+    }
+    CouchModel.apply( this, arguments );
   },
 
   schema: {
@@ -280,20 +285,26 @@ export const Comment = CouchModel.extend( {
 mixinValidation( Comment );
 
 export const CommentCollection = CouchCollection.extend( {
-  constructor: function( pointId, models, options ) {
-    this.pointId = pointId;
-    CouchCollection.apply( this, models, options );
-  },
-
   initialize: function( models, options ) {
     CouchCollection.prototype.initialize.apply( this, arguments );
+    const pointId = this.pointId = options.pointId;
+
+    const connect = this.connect;
+    const database = this.database;
+    this.comment = connect ? connect( database, Comment ) : Comment;
+
     this.pouch = {
       options: {
         allDocs: {
-          ...keysBetween( this.pointId + '/comment' ),
+          ...keysBetween( pointId + '/comment' ),
           include_docs: true
         }
       }
     };
+  },
+
+  model: function( attributes, options ) {
+    const pointId = options.collection.pointId;
+    return new ( this.comment) (attributes, { pointId, ...options } );
   }
 } );

@@ -227,13 +227,15 @@ describe( 'Point models and collections', function() {
   describe( 'Comment', function() {
     beforeEach( function() {
       this.pointId = 'point/service/joe-s-pizzeria/s00twy01m';
-      this.comment = new Comment( this.pointId, {
+      this.comment = new Comment( {
         username: 'joe',
         text: 'The pizza is pretty good',
         rating: 4
+      }, {
+        pointId: this.pointId
       } );
     } );
-    describe( 'constructor()', function() {
+    describe( 'initialize()', function() {
       it( 'should create a new Comment with an id and uuid', function() {
         expect( this.comment.id ).to.match( new RegExp( this.pointId + '/comment' ) );
         expect( this.comment.get( 'uuid' ) ).to.exist;
@@ -255,10 +257,12 @@ describe( 'Point models and collections', function() {
     describe( 'save()', function() {
       it( 'should save to PouchDB', function() {
         const ConnectedComment = connect( this.pouch, Comment );
-        const comment = new ConnectedComment( this.pointId, {
+        const comment = new ConnectedComment( {
           username: 'joe',
           text: 'The pizza is pretty good',
           rating: 4
+        }, {
+          pointId: this.pointId
         } );
         comment.save();
         const doc = this.pouch.get( comment.id );
