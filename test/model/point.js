@@ -95,16 +95,14 @@ describe( 'Point models and collections', function() {
     describe( 'destroy()', function() {
       it( 'should delete the service from PouchDB', function( done ) {
         const ConnectedService = connect( this.pouch, Service );
-
         const service = new ConnectedService( this.service.attributes );
 
         const id = service.id;
-        const testDestroy = ( ) => {
+        service.save().then( res => {
           service.destroy();
           const doc = this.pouch.get( id );
           expect( doc ).to.be.rejected.and.notify( done );
-        };
-        service.save( {}, { success: testDestroy, error: testDestroy } );
+        } );
       } );
     } );
   } );
@@ -171,10 +169,11 @@ describe( 'Point models and collections', function() {
     } );
     describe( 'fetch()', function( done ) {
       it( 'should fetch points from PouchDB', function( done ) {
-        const ConnectedPointCollection = connect( this.pouch, PointCollection );
-        const ConnectedService = connect( this.pouch, Service );
+        const CPointCollection = connect( this.pouch, PointCollection );
+        const CService = connect( this.pouch, Service );
 
-        const service = new ConnectedService( {
+        const points = new CPointCollection();
+        const service = new CService( {
           name: 'Joe\'s Pizzeria',
           location: [ 0, 0 ],
           type: 'restaurant',
@@ -182,19 +181,11 @@ describe( 'Point models and collections', function() {
           description: 'It is a restaurant'
         } );
         service.specify();
-
-        service.save( {}, {
-          success: ( ) => {
-            const points = new ConnectedPointCollection();
-            points.fetch( {
-              success: collection => {
-                expect( collection ).to.have.lengthOf( 1 );
-                done();
-              },
-              error: err => done( err )
-            } );
-          },
-          error: err => done( err )
+        service.save().then( res => {
+          return points.fetch();
+        } ).then( res => {
+          expect( res.collection ).to.have.lengthOf( 1 );
+          done();
         } );
       } );
     } );
@@ -204,12 +195,9 @@ describe( 'Point models and collections', function() {
         const points = new ConnectedPointCollection();
         points.once( 'add', ( ) => {
           points.reset();
-          points.fetch( {
-            success: points => {
-              expect( points ).to.have.lengthOf( 1 );
-              done();
-            },
-            error: err => done( err )
+          points.fetch().then( res => {
+            expect( res.collection.models ).to.have.lengthOf( 1 );
+            done();
           } );
         } );
         points.create( {
@@ -219,7 +207,9 @@ describe( 'Point models and collections', function() {
           type: 'restaurant',
           amenities: [ 'restaurant' ],
           description: 'It is a restaurant'
-        }, { wait: true } );
+        }, {
+          wait: true
+        } );
       } );
     } );
   } );
@@ -293,32 +283,30 @@ describe( 'Point models and collections', function() {
       } );
     } );
     describe( 'fetch()', function() {
-      it( 'should fetch comments from PouchDB', function( done ) {
+      it( 'should fetch comments from PouchDB', function() {
         const pointId = this.pointId;
         const CCommentCollection = connect( this.pouch, CommentCollection );
+        const CComment = connect( this.pouch, Comment );
 
         const comments = new CCommentCollection( [], { pointId } );
-        comments.create( {
-          username: 'joe',
-          text: 'joe comment',
-          rating: 4
+        const promise = Promise.all( [
+          new CComment( {
+            username: 'joe',
+            text: 'joe comment',
+            rating: 4
+          } ).save(),
+          new CComment( {
+            username: 'bob',
+            text: 'bob comment',
+            rating: 4
+          } ).save()
+        ] ).then( res => {
+          return comments.fetch();
         } );
-        comments.create( {
-          username: 'bob',
-          text: 'bob comment',
-          rating: 4
-        }, { wait: true } );
 
-        comments.once( 'add', ( ) => {
-          comments.reset();
-          comments.fetch( {
-            success: comments => {
-              expect( comments.models ).to.have.lengthOf( 2 );
-              done();
-            },
-            error: err => done( err )
-          } );
-        } );
+        expect( promise ).to.eventually
+          .have.deep.property( 'collection.models' )
+          .with.lengthOf( 2 );
       } );
     } );
   } );

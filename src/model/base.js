@@ -17,7 +17,7 @@
  * along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { Model, Collection } from 'backbone';
+import { PromiseModel, PromiseCollection } from './promise';
 import { union, map } from 'lodash';
 
 // # keysBetween
@@ -45,9 +45,9 @@ export function keysBetween( base ) {
 // models)
 const safeguard = [ '_id', '_rev' ];
 
-export const CouchModel = Model.extend( {
+export const CouchModel = PromiseModel.extend( {
   initialize: function( attributes, options ) {
-    Model.prototype.initialize.apply( this, arguments );
+    PromiseModel.prototype.initialize.apply( this, arguments );
     this.safeguard = union( safeguard, this.safeguard );
   }
 } );
@@ -55,7 +55,7 @@ export const CouchModel = Model.extend( {
 // ## Couch Collection
 // By default, btc-models use the allDocs method with include_docs = true.
 // Therefore, we need to pick the document objects in the response array.
-export const CouchCollection = Collection.extend( {
+export const CouchCollection = PromiseCollection.extend( {
   parse: function( response, options ) {
     return map( response.rows, 'doc' );
   }

@@ -1,4 +1,5 @@
 import { sync } from 'backbone-pouch';
+import { merge } from 'lodash';
 
 // # Connect Function
 // Given a PouchDB databse object and a backbone class, connect that class
@@ -9,8 +10,16 @@ import { sync } from 'backbone-pouch';
 // specify a [`pouch` object](https://github.com/jo/backbone-pouch).
 export function connect( database, klass ) {
   return klass.extend( {
-    connect: connect,
-    database: database,
+    connect,
+    database,
     sync: sync( { db: database } )
   } );
+}
+
+export function connectMut( database, ...klasses ) {
+  klasses.forEach( klass => merge( klass.prototype, {
+    connect,
+    database,
+    sync: sync( { db: database } )
+  } ) );
 }
