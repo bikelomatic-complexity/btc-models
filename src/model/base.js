@@ -18,7 +18,9 @@
  */
 
 import { PromiseModel, PromiseCollection } from './promise';
-import { union, map } from 'lodash';
+
+import { attachments } from 'backbone-pouch';
+import { assign, union, map, isFunction } from 'lodash';
 
 // # keysBetween
 // A common CouchDB pattern is querying documents by keys in a range.
@@ -51,6 +53,42 @@ export const CouchModel = PromiseModel.extend( {
     this.safeguard = union( safeguard, this.safeguard );
   }
 } );
+
+const _attachments = attachments();
+const _attach = _attachments.attach;
+_attachments.attach = function( blob, name, type, done ) {
+  let args = [ blob ];
+  if ( !isFunction( name ) ) {
+    args.push( name );
+    if ( !isFunction( type ) ) {
+      args.push( type );
+    }
+  }
+  return new Promise( ( resolve, reject ) => {
+    args.push( ( err, result ) => {
+      if ( err ) {
+        reject( err );
+      } else {
+        resolve( result );
+      }
+    } );
+    _attach.apply( this, args );
+  } );
+};
+const _attachment = _attachments.attachment;
+_attachments.attachment = function( name ) {
+  return new Promise( ( resolve, reject ) => {
+    const callback = ( err, result ) => {
+      if ( err ) {
+        reject( err );
+      } else {
+        resolve( result );
+      }
+    };
+    _attachment.call( this, name, callback );
+  } );
+};
+assign( CouchModel.prototype, _attachments );
 
 // ## Couch Collection
 // By default, btc-models use the allDocs method with include_docs = true.

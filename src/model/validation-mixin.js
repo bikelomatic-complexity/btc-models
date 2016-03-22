@@ -32,7 +32,11 @@ import { assign, omit, merge, union } from 'lodash';
 // The ajv instance will be closed over by the `validate` function mixed into
 // the backbone model.
 export default function ValidationMixin( schema ) {
-  const ajv = Ajv( { allErrors: true, useDefaults: true } );
+  const ajv = Ajv( {
+    removeAdditional: true,
+    allErrors: true,
+    useDefaults: true
+  } );
 
   return {
     // ## Validate

@@ -16,7 +16,7 @@ export function connect( database, klass ) {
   } );
 }
 
-export function connectMut( database, ...klasses ) {
+export function connectMut( database, klasses ) {
   klasses.forEach( klass => merge( klass.prototype, {
     connect,
     database,

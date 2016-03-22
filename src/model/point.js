@@ -20,12 +20,15 @@
 import { mixinValidation, mergeSchemas } from './validation-mixin';
 import { CouchModel, CouchCollection, keysBetween } from './base';
 
-import { keys } from 'lodash';
+import { keys, fromPairs, includes } from 'lodash';
+import { createObjectURL } from 'blob-util';
 
 import docuri from 'docuri';
 import ngeohash from 'ngeohash';
 import normalize from 'to-id';
 import uuid from 'node-uuid';
+
+const browser = ( typeof window !== 'undefined' );
 
 // # Point Model
 // The point represents a location on the map with associated metadata, geodata,
@@ -51,6 +54,7 @@ export const Point = CouchModel.extend( {
   initialize: function( attributes, options ) {
     CouchModel.prototype.initialize.apply( this, arguments );
     this.set( 'created_at', new Date().toISOString() );
+    this.coverUrl = false;
   },
 
   // ## Specify
@@ -114,6 +118,59 @@ export const Point = CouchModel.extend( {
       'created_at',
       'flag'
     ]
+  },
+
+  attach: function( blob, name, type ) {
+    CouchModel.prototype.attach.apply( this, arguments );
+    if ( browser ) {
+      this.coverUrl = createObjectURL( blob );
+    }
+  },
+
+  clear: function() {
+    CouchModel.prototype.clear.apply( this, arguments );
+    this.coverUrl = false;
+  },
+
+  // When fetching a point, should it have a cover attachment, extend the
+  // promise to fetch the attachment and set `this.coverUrl`. Regardless
+  // of the existence of the cover attachment, always resolve the promise to
+  // the original result.
+  fetch: function() {
+    let _res;
+    return CouchModel.prototype.fetch.apply( this, arguments ).then( res => {
+      _res = res;
+
+      const hasCover = includes( this.attachments(), 'cover.png' );
+
+      if ( browser && hasCover ) {
+        return this.attachment( 'cover.png' );
+      } else {
+        return;
+      }
+    } ).then( blob => {
+      if ( blob ) {
+        this.coverUrl = createObjectURL( blob );
+      }
+      return _res;
+    } );
+  },
+
+  store: function() {
+    return { ...this.toJSON(), coverUrl: this.coverUrl };
+  }
+}, {
+  uri: pointId,
+
+  for: id => {
+    const {type} = pointId( id );
+    if ( type === 'service' ) {
+      return new Service( { _id: id } );
+    } else if ( type === 'alert' ) {
+      return new Alert( { _id: id } );
+    } else {
+      throw 'A point must either be a service or alert';
+    }
   }
 } );
 
@@ -177,7 +234,8 @@ export const Service = Point.extend( {
         items: {
           type: 'string',
           enum: keys( serviceTypes )
-        }
+        },
+        default: []
       },
       address: {
         type: 'string'
@@ -272,6 +330,10 @@ export const PointCollection = CouchCollection.extend( {
     } else {
       throw 'A point must be either a service or alert';
     }
+  },
+
+  store: function() {
+    return fromPairs( this.models, point => [ point.id, point.store() ] );
   }
 } );
 

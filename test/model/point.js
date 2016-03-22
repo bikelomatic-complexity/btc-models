@@ -1,4 +1,4 @@
-/*global describe it beforeEach afterEach*/
+/*global describe it beforeEach afterEach Buffer*/
 import chai, { expect } from 'chai';
 import promised from 'chai-as-promised';
 
@@ -103,6 +103,23 @@ describe( 'Point models and collections', function() {
           const doc = this.pouch.get( id );
           expect( doc ).to.be.rejected.and.notify( done );
         } );
+      } );
+    } );
+    describe( 'attach()', function() {
+      it( 'should attach an attachment', function() {
+        const ConnectedService = connect( this.pouch, Service );
+        const service = new ConnectedService( this.service.attributes );
+
+        const data = [ 0x62, 0x75, 0x66, 0x66, 0x65, 0x72 ];
+        const coverBlob = new Buffer( data );
+
+        const promise = service.save().then( res => {
+          return service.attach( coverBlob, 'cover.png', 'image/png' );
+        } ).then( res => {
+          return service.attachment( 'cover.png' );
+        } );
+
+        expect( promise ).to.eventually.be.an.instanceof( Buffer );
       } );
     } );
   } );
