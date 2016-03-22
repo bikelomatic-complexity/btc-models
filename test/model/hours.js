@@ -46,6 +46,13 @@ describe( 'Schedule', function() {
         .to.have.deep.property( 'schedule.winter[0]' )
         .with.deep.property( 'day', 'monday' );
     } );
+    it( 'should expand weekdays into five individual days', function() {
+      const schedule = new Schedule();
+      schedule.addHoursIn( 'weekday', this.opens, this.closes );
+      expect( schedule.attributes )
+        .to.have.deep.property( 'schedule.default' )
+        .with.lengthOf( 5 );
+    } );
   } );
   describe( 'delHoursIn()', function() {
     it( 'should remove hours from the default season', function() {
