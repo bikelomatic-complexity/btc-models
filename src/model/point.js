@@ -81,6 +81,19 @@ export const Point = CouchModel.extend( {
     }
   },
 
+  // ## Safeguard for Points
+  // Points have image attachments, so we should let backbone pouch handle
+  // those and we should not validate the _attachments key
+  safeguard: [
+    '_attachments'
+  ],
+
+  defaults: function() {
+    return {
+      flag: false
+    };
+  },
+
   schema: {
     type: 'object',
     additionalProperties: false,
@@ -107,8 +120,7 @@ export const Point = CouchModel.extend( {
         type: 'string'
       },
       flag: {
-        type: 'boolean',
-        default: false
+        type: 'boolean'
       }
     },
     required: [
@@ -120,29 +132,29 @@ export const Point = CouchModel.extend( {
     ]
   },
 
-  attach: function( blob, name, type ) {
-    CouchModel.prototype.attach.apply( this, arguments );
-    if ( browser ) {
-      this.coverUrl = createObjectURL( blob );
-    }
-  },
-
   clear: function() {
     CouchModel.prototype.clear.apply( this, arguments );
     this.coverUrl = false;
   },
 
+  // ## Fetch
   // When fetching a point, should it have a cover attachment, extend the
-  // promise to fetch the attachment and set `this.coverUrl`. Regardless
-  // of the existence of the cover attachment, always resolve the promise to
-  // the original result.
+  // promise to fetch the attachment and set `this.coverUrl`.
   fetch: function() {
-    let _res;
     return CouchModel.prototype.fetch.apply( this, arguments ).then( res => {
-      _res = res;
+      return this.getCover( res );
+    } );
+  },
 
+  // # Get Cover
+  // Should a point (already fetched) have a cover attachment, get the
+  // attachment's data and store an object url for it in `this.coverUrl`
+  //
+  // As a utility to client functions, resolve the returned promise to the
+  // single argument passed to `getCover`.
+  getCover: function( ret ) {
+    return Promise.resolve().then( ( ) => {
       const hasCover = includes( this.attachments(), 'cover.png' );
-
       if ( browser && hasCover ) {
         return this.attachment( 'cover.png' );
       } else {
@@ -152,10 +164,27 @@ export const Point = CouchModel.extend( {
       if ( blob ) {
         this.coverUrl = createObjectURL( blob );
       }
-      return _res;
+    } ).then( ( ) => {
+      return ret;
     } );
   },
 
+  // ## Set Cover
+  // If the user already has a cover blob and they want to use it with the
+  // model before attach() can finish storing it to PouchDB, they can use
+  // this method to manually insert it.
+  //
+  // The associated object url for the blob will then be available to other
+  // functions like store().
+  setCover: function( blob ) {
+    if ( browser ) {
+      this.coverUrl = createObjectURL( blob );
+    }
+  },
+
+  // ## Get Redux Representation
+  // Return a nested object/arary representation of the model suitable for
+  // use with redux.
   store: function() {
     return { ...this.toJSON(), coverUrl: this.coverUrl };
   }
@@ -224,6 +253,15 @@ export const Service = Point.extend( {
     Point.prototype.specify.call( this, 'service', name, location );
   },
 
+  defaults: function() {
+    return {
+      ...Point.prototype.defaults.apply( this, arguments ),
+      amenities: [],
+      schedule: { 'default': [] },
+      seasonal: false
+    };
+  },
+
   schema: mergeSchemas( Point.prototype.schema, {
     properties: {
       type: {
@@ -234,18 +272,16 @@ export const Service = Point.extend( {
         items: {
           type: 'string',
           enum: keys( serviceTypes )
-        },
-        default: []
+        }
       },
       address: {
         type: 'string'
       },
       schedule: {
-        type: 'array'
+        type: 'object'
       },
       seasonal: {
-        type: 'boolean',
-        default: false
+        type: 'boolean'
       },
       phone: {
         type: 'string'
@@ -332,8 +368,18 @@ export const PointCollection = CouchCollection.extend( {
     }
   },
 
+  // ## Fetch Cover Images for all Points
+  // Returns a promise that resolves when all points in the array have
+  // their cover images available.
+  getCovers: function() {
+    return Promise.all( this.models.map( point => point.getCover() ) );
+  },
+
+  // ## Get Redux Representation
+  // Return a nested object/arary representation of the collection suitable for
+  // use with redux.
   store: function() {
-    return fromPairs( this.models, point => [ point.id, point.store() ] );
+    return fromPairs( this.models.map( point => [ point.id, point.store() ] ) );
   }
 } );
 

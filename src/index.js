@@ -1,7 +1,7 @@
 export { connect, connectMut } from './connect';
 export { serviceTypes, alertTypes, display } from './model/point';
 
-export { Schedule, days } from './model/hours';
+export { Schedule, days, nextDay } from './model/hours';
 
 export { User, UserCollection, Login } from './model/user';
 export { Point, Service, Alert, PointCollection, Comment, CommentCollection } from './model/point';
@@ -22,3 +22,8 @@ export const models = [
   Login
 ];
 /*esfmt-ignore-end*/
+
+import { connectMut } from './connect';
+export default function connectModels( database ) {
+  connectMut( database, models );
+}

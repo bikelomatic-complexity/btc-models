@@ -60,6 +60,13 @@ describe( 'Point models and collections', function() {
         this.service.set( 'type', 'flooding', val );
         expect( this.service.validationError ).to.exist;
       } );
+      it( 'should fill in defaults after validation', function() {
+        expect( this.service.attributes ).to.have.property( 'amenities' )
+          .that.is.an( 'array' );
+        expect( this.service.attributes ).to.have.property( 'schedule' )
+          .that.is.an( 'object' );
+        expect( this.service.attributes ).to.have.property( 'flag', false );
+      } );
     } );
     describe( 'initialize()', function() {
       it( 'should set created_at automatically', function() {
