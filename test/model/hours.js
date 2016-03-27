@@ -5,21 +5,28 @@ import { Schedule, normalize } from '../../src/model/hours';
 describe( 'normalize', function() {
   it( 'should return an HHMM string', function() {
     const date = new Date();
-    date.setHours( 6 );
+    date.setHours( 11 );
     date.setMinutes( 30 );
 
     const result = normalize( date );
-    expect( result ).to.equal( '1970-01-01T11:30:00.000Z' );
+
+    date.setYear( 1970 );
+    date.setMonth( 0 );
+    date.setDate( 1 );
+    date.setSeconds( 0 );
+    date.setMilliseconds( 0 );
+
+    expect( result ).to.equal( date.toISOString() );
   } );
 } );
 describe( 'Schedule', function() {
   beforeEach( function() {
     this.opens = new Date();
-    this.opens.setUTCHours( 10 );
+    this.opens.setHours( 11 );
     this.opens.setMinutes( 30 );
 
     this.closes = new Date();
-    this.closes.setUTCHours( 18 );
+    this.closes.setHours( 18 );
     this.closes.setMinutes( 30 );
   } );
   describe( 'constructor()', function() {
@@ -37,7 +44,8 @@ describe( 'Schedule', function() {
         .with.deep.property( 'day', 'monday' );
       expect( schedule.attributes )
         .to.have.deep.property( 'schedule.default[0]' )
-        .with.deep.property( 'opens', '1970-01-01T11:30:00.000Z' );
+        .with.deep.property( 'opens' )
+        .that.is.a( 'string' );
     } );
     it( 'should add hours to a named season', function() {
       const schedule = new Schedule();
