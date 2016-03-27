@@ -17,22 +17,37 @@
  * along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import _ from 'underscore';
-
-import ValidationMixin from './validation-mixin';
 import { CouchModel, CouchCollection } from './base';
-import schema from '../schema/user.json';
+import { mixinValidation, mergeSchemas } from './validation-mixin';
 
-// ## User
-// We extend from `CouchModel` to ensure we don't mess with `_id` or `_rev`
-// by default
+// # Credentials Segment
+// This schema validates a user's email and password. Both the User and Login
+// models share this schema segment.
+const credentials = {
+  type: 'object',
+  additionalProperties: false,
+  properties: {
+    email: {
+      type: 'string',
+      format: 'email'
+    },
+    password: {
+      type: 'string',
+      minLength: 8
+    }
+  },
+  required: [
+    'email',
+    'password'
+  ]
+};
+
+// # User Model
+// In the domain layer, we uniquely reference Users by their emails. When
+// models are serialized into Couch docs, the `_id` key will be set.
 export const User = CouchModel.extend( {
-
-  // In the domain layer, we uniquely reference Users by their emails. When
-  // models are serialized into Couch docs, the `_id` key will be set.
   idAttribute: 'email',
 
-  // Reserved by documents in CouchDB's _users database
   safeguard: [
     'name',
     'type',
@@ -42,18 +57,48 @@ export const User = CouchModel.extend( {
     'salt'
   ],
 
-  // The majority of the time we are creating regular users, so we default
-  // to an empty role set.
-  defaults: {
-    roles: [],
-    verified: false
-  },
+  schema: mergeSchemas( {}, credentials, {
+    properties: {
+      first: {
+        type: 'string',
+        minLength: 1
+      },
+      last: {
+        type: 'string',
+        minLength: 1
+      },
+      username: {
+        type: 'string',
+        minLength: 3
+      },
+      verification: {
+        type: 'string'
+      },
+      verified: {
+        type: 'boolean',
+        default: false
+      },
+      roles: {
+        type: 'array',
+        default: []
+      }
+    },
+    required: [
+      'first',
+      'last',
+      'username',
+      'verified',
+      'roles'
+    ]
+  } ),
 
-  // Serialize the User object into a doc for CouchDB. CouchDB's special users
-  // database has extra requirements.
-  //  * `_id` must match `/org.couchdb.user:.*/`
-  //  * `name` is equal to the portion after the colon
-  //  * `type` must be `'user'`.
+  // # toJSON
+  // Serialize the User object into a doc for CouchDB.
+  //
+  // CouchDB's special users database has extra requirements.
+  //  - _id must match `/org.couchdb.user:/``
+  //  - name is equal to the portion after the colon
+  //  - type must be 'user'.
   toJSON: function( options ) {
     return Object.assign( {}, this.attributes, {
       _id: `org.couchdb.user:${this.attributes.email}`,
@@ -62,18 +107,13 @@ export const User = CouchModel.extend( {
     } );
   }
 } );
+mixinValidation( User );
 
-// Apply the ValidationMixin on the User schema
-_.extend( User.prototype, ValidationMixin( schema ) );
-
-// ## User Collection
+// # User Collection
+// Get all CouchDB users, prefixed by 'org.couchdb.user:'.
 export const UserCollection = CouchCollection.extend( {
   model: User,
 
-  // Configure BackbonePouch to query all docs, but only return user documents.
-  // This ignores design documents.
-  //
-  // *Eventually we need to setup views to increase performance!*
   pouch: {
     options: {
       allDocs: {
@@ -82,11 +122,10 @@ export const UserCollection = CouchCollection.extend( {
         endkey: 'org.couchdb.user:\uffff'
       }
     }
-  },
-
-  // Both the query and allDocs methods return an augmented data array.
-  // We are interested only in the `doc` property for each array element.
-  parse: function( response, options ) {
-    return _( response.rows ).pluck( 'doc' );
   }
 } );
+
+// # Login model
+// Just a user's email and password
+export const Login = CouchModel.extend( { schema: credentials } );
+mixinValidation( Login );

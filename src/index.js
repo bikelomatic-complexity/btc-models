@@ -1,3 +1,29 @@
-export { User, UserCollection } from './model/user';
-export { Login } from './model/login';
-export { pointId, pointIdFromRaw } from './model/point';
+export { connect, connectMut } from './connect';
+export { serviceTypes, alertTypes, display } from './model/point';
+
+export { Schedule, days, nextDay } from './model/hours';
+
+export { User, UserCollection, Login } from './model/user';
+export { Point, Service, Alert, PointCollection, Comment, CommentCollection } from './model/point';
+
+import { User, UserCollection, Login } from './model/user';
+import { Point, Service, Alert, PointCollection, Comment, CommentCollection } from './model/point';
+
+/*esfmt-ignore-start*/
+export const models = [
+  Point,
+  Service,
+  Alert,
+  PointCollection,
+  Comment,
+  CommentCollection,
+  User,
+  UserCollection,
+  Login
+];
+/*esfmt-ignore-end*/
+
+import { connectMut } from './connect';
+export default function connectModels( database ) {
+  connectMut( database, models );
+}

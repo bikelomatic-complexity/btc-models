@@ -1,9 +1,5 @@
 {
     "rules": {
-        "indent": [
-            2,
-            2
-        ],
         "quotes": [
             2,
             "single"
@@ -31,6 +27,9 @@
     "extends": "eslint:recommended",
     "parserOptions": {
       "ecmaVersion": 6,
-      "sourceType": "module"
+      "sourceType": "module",
+      "ecmaFeatures": {
+        "experimentalObjectRestSpread": true
+      }
     }
 }

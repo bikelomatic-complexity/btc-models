@@ -17,79 +17,84 @@
  * along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { Model, Collection } from 'backbone';
-import { omit, union, isArray, intersection, keys, extend } from 'underscore';
+import { PromiseModel, PromiseCollection } from './promise';
 
-// Special keys that are reserved by serialized CouchDB documents
-const baseSafeguard = [ '_id', '_rev' ];
+import { attachments } from 'backbone-pouch';
+import { assign, union, map, isFunction } from 'lodash';
 
-// ## Couch Model
-// This base class ensures the client will not unknowingly modify the special
-// keys of a CouchDB document.
-export const CouchModel = Model.extend( {
+// # keysBetween
+// A common CouchDB pattern is querying documents by keys in a range.
+// Use within a pouch config object like: `...keysBetween( 'points/' )`
+export function keysBetween( base ) {
+  return {
+    startkey: base,
+    endkey: base + '\uffff'
+  };
+}
 
-  // By default, `CouchModel` safeguards `_id` and `_rev`. You can extend
-  // this list of safeguarded keys by passing an array in `options.special`.
+// # CouchModel
+// This is a base class for backbone models that use backbone pouch. CouchDB
+// documents contain keys that you need to work with the database, but are
+// irrelevant to the domain purpose of the model.
+//
+// It stores an array of these document keys in `this.safeguard`. By default,
+// the array includes `_id` and `_rev`. However, subclasses of CouchModel
+// may specify more.
+//
+// Other functions may use `this.safeguard` in their logic. For instance,
+// the validation mixin does not consider safeguarded keys in model validation.
+// (otherwise you would have to include _id and _rev in the schema for all
+// models)
+const safeguard = [ '_id', '_rev' ];
+
+export const CouchModel = PromiseModel.extend( {
   initialize: function( attributes, options ) {
-    Model.prototype.initialize.apply( this, arguments );
-
-    if ( this.safeguard && isArray( this.safeguard ) ) {
-      this.safeguard = union( baseSafeguard, this.safeguard );
-    } else {
-      this.safeguard = baseSafeguard;
-    }
-  },
-
-  // When fetching a single document, allow overriding safeguarded Couch keys
-  fetch: function( options ) {
-    return Model.prototype.fetch.call( this, extend( {}, options, {
-      force: true
-    } ) );
-  },
-
-  // Override Backbone's set function to ignore all the special keys, *unless
-  // our custom force option is set to true*.
-  set: function( key, val, options ) {
-
-    // We reuse Backbone's argument normalization code
-    if ( key == null ) return this;
-
-    let attrs;
-    if ( typeof key === 'object' ) {
-      attrs = key;
-      options = val;
-    } else {
-      ( attrs = {} )[ key ] = val;
-    }
-
-    options || ( options = {} );
-
-    if ( !options.force ) {
-      // Uncomment to log keys that we omit from super.set()
-      const omitted = intersection( keys( attrs ), this.safeguard );
-
-      // Actually omit safeguarded keys
-      attrs = omit( attrs, this.safeguard );
-
-      if ( omitted.length > 0 ) {
-        throw new Error( 'attempted override of safeguarded keys: ' +
-          omitted.toString() );
-      }
-    }
-
-    return Model.prototype.set.call( this, attrs, options );
+    PromiseModel.prototype.initialize.apply( this, arguments );
+    this.safeguard = union( safeguard, this.safeguard );
   }
 } );
 
-// ## Couch Collection
-// This base collection class helps the CouchModel to prevent the client
-// from unknowingly modifying the special keys of a CouchDB document.
-export const CouchCollection = Collection.extend( {
+const _attachments = attachments();
+const _attach = _attachments.attach;
+_attachments.attach = function( blob, name, type, done ) {
+  let args = [ blob ];
+  if ( !isFunction( name ) ) {
+    args.push( name );
+    if ( !isFunction( type ) ) {
+      args.push( type );
+    }
+  }
+  return new Promise( ( resolve, reject ) => {
+    args.push( ( err, result ) => {
+      if ( err ) {
+        reject( err );
+      } else {
+        resolve( result );
+      }
+    } );
+    _attach.apply( this, args );
+  } );
+};
+const _attachment = _attachments.attachment;
+_attachments.attachment = function( name ) {
+  return new Promise( ( resolve, reject ) => {
+    const callback = ( err, result ) => {
+      if ( err ) {
+        reject( err );
+      } else {
+        resolve( result );
+      }
+    };
+    _attachment.call( this, name, callback );
+  } );
+};
+assign( CouchModel.prototype, _attachments );
 
-  // When fetching multiple documents, allow overriding safeguarded Couch keys
-  fetch: function( options ) {
-    return Collection.prototype.fetch.call( this, extend( {}, options, {
-      force: true
-    } ) );
+// ## Couch Collection
+// By default, btc-models use the allDocs method with include_docs = true.
+// Therefore, we need to pick the document objects in the response array.
+export const CouchCollection = PromiseCollection.extend( {
+  parse: function( response, options ) {
+    return map( response.rows, 'doc' );
   }
 } );

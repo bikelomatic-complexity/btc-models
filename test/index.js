@@ -6,6 +6,9 @@ import { expect } from 'chai';
 import * as index from '../lib/index';
 
 describe( 'index.js', function() {
+  it( 'should export an models object', function() {
+    expect( index ).to.have.property( 'models' );
+  } );
   it( 'should export User and UserCollection', function() {
     expect( index ).to.have.property( 'User' );
     expect( index ).to.have.property( 'UserCollection' );
