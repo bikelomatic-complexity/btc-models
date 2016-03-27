@@ -15,11 +15,11 @@ describe( 'normalize', function() {
 describe( 'Schedule', function() {
   beforeEach( function() {
     this.opens = new Date();
-    this.opens.setHours( 6 );
+    this.opens.setUTCHours( 10 );
     this.opens.setMinutes( 30 );
 
     this.closes = new Date();
-    this.closes.setHours( 7 );
+    this.closes.setUTCHours( 18 );
     this.closes.setMinutes( 30 );
   } );
   describe( 'constructor()', function() {
