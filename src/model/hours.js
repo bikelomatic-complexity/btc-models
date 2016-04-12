@@ -37,6 +37,12 @@ export const days = {
   'weekend':   { display: 'Weekend',   type: 'compose', next: 'weekday'   },
   'weekday' :  { display: 'Weekdays',  type: 'compose', next: 'weekend'   }
 };
+export const timezones = [
+  { display: 'PST', longName: 'Pacific Standard Time', time: -8 },
+  { display: 'MST', longName: 'Mountain Standard Time', time: -7 },
+  { display: 'CST', longName: 'Central Standard Time', time: -6 },
+  { display: 'EST', longName: 'Eastern Standard Time', time: -5 }
+]
 /*esfmt-ignore-end*/
 
 const daysKeys = keys( days );
