@@ -4,9 +4,9 @@
   "description": "Shared models and validation for the Bicycle Touring Companion",
   "scripts": {
     "prepublish": "npm run build",
-    "format:replace": "esformatter -i '?(src|test)/**/*.js'",
-    "format": "esformatter --diff '?(src|test)/**/*.js'",
-    "lint": "eslint '?(src|test)/**/*.js'",
+    "format:replace": "esformatter -i \"?(src|test)/**/*.js\"",
+    "format": "esformatter --diff \"?(src|test)/**/*.js\"",
+    "lint": "eslint \"?(src|test)/**/*.js\"",
     "doc": "docco src/model/*.js",
     "prebuild": "npm run clean",
     "build": "babel src -d lib --copy-files",
