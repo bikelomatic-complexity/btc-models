@@ -12,7 +12,7 @@
     "build": "babel src -d lib --copy-files",
     "clean": "rm -r lib/",
     "//preunit": "babel test -d .test --copy-files",
-    "unit": "NODE_ENV=test mocha 'test/**/*.js' --require './shim' --compilers js:babel-core/register",
+    "unit": "mocha \"test/**/*.js\" --require \"./shim\" --compilers js:babel-core/register",
     "test": "nyc npm run unit",
     "report": "nyc report --reporter=text-lcov | coveralls",
     "coverage": "nyc report --reporter=lcov"

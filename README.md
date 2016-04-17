@@ -15,3 +15,8 @@ v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](http://www.gnu.org
 2. Build changes in `src` by running `npm run build`
 3. Then in any other repo you wish to test `btc-models` (like `btc-app`, `btc-server`, etc...) run `npm link btc-models`.
 That's it! To find more info check out the npm-link documents https://docs.npmjs.com/cli/link
+
+# How to test
+1. Make sure NODE_ENV is set to `test`
+2. run `npm run build`
+3. run `npm run test`
