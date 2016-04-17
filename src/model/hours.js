@@ -24,18 +24,19 @@ import _, { keys, find } from 'lodash';
 //
 // The keys of the enum are ordered to correspond with new Date().getDay().
 // Use keys( days ) to use that index.
+
 /*esfmt-ignore-start*/
 export const days = {
-  'sunday': { display: 'Sunday', type: 'weekend', next: 'monday' },
-  'monday': { display: 'Monday', type: 'weekday', next: 'tuesday' },
-  'tuesday': { display: 'Tuesday', type: 'weekday', next: 'wednesday' },
-  'wednesday': { display: 'Wednesday', type: 'weekday', next: 'thursday' },
-  'thursday': { display: 'Thursday', type: 'weekday', next: 'friday' },
-  'friday': { display: 'Friday', type: 'weekday', next: 'saturday' },
-  'saturday': { display: 'Saturday', type: 'weekend', next: 'sunday' },
+  'sunday':    { display: 'Sunday',    type: 'weekend', next: 'monday'    },
+  'monday':    { display: 'Monday',    type: 'weekday', next: 'tuesday'   },
+  'tuesday':   { display: 'Tuesday',   type: 'weekday', next: 'wednesday' },
+  'wednesday': { display: 'Wednesday', type: 'weekday', next: 'thursday'  },
+  'thursday':  { display: 'Thursday',  type: 'weekday', next: 'friday'    },
+  'friday':    { display: 'Friday',    type: 'weekday', next: 'saturday'  },
+  'saturday':  { display: 'Saturday',  type: 'weekend', next: 'sunday'    },
 
-  'weekend': { display: 'Weekend', type: 'compose', next: 'weekday' },
-  'weekday': { display: 'Weekdays', type: 'compose', next: 'weekend' }
+  'weekend':   { display: 'Weekend',   type: 'compose', next: 'weekday'   },
+  'weekday' :  { display: 'Weekdays',  type: 'compose', next: 'weekend'   }
 };
 /*esfmt-ignore-end*/
 
