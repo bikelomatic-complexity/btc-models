@@ -219,6 +219,7 @@ export const Point = CouchModel.extend( {
 // A Service may have a single type, indicating the primary purpose of the
 // buisness or point of interest. Service types may also be included in a
 // Service's amenities array.
+
 /*esfmt-ignore-start*/
 export const serviceTypes = {
   'airport':           { display: 'Airport' },
