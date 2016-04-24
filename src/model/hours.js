@@ -37,12 +37,16 @@ export const days = {
   'weekend':   { display: 'Weekend',   type: 'compose', next: 'weekday'   },
   'weekday' :  { display: 'Weekdays',  type: 'compose', next: 'weekend'   }
 };
-export const timezones = [
-  { display: 'PST', longName: 'Pacific Standard Time', time: -8 },
-  { display: 'MST', longName: 'Mountain Standard Time', time: -7 },
-  { display: 'CST', longName: 'Central Standard Time', time: -6 },
-  { display: 'EST', longName: 'Eastern Standard Time', time: -5 }
-]
+export const timezones = {
+  'pst': { display: 'PST', longName: 'Pacific Standard Time', time: -8 },
+  'pdt': { display: 'PDT', longName: 'Pacific Daylight Time', time: -7 },
+  'mst': { display: 'MST', longName: 'Mountain Standard Time', time: -7 },
+  'mdt': { display: 'MDT', longName: 'Mountain Daylight Time', time: -6 },
+  'cst': { display: 'CST', longName: 'Central Standard Time', time: -6 },
+  'cdt': { display: 'CDT', longName: 'Central Daylight Time', time: -5 },
+  'est': { display: 'EST', longName: 'Eastern Standard Time', time: -5 },
+  'edt': { display: 'EDT', longName: 'Eastern Daylight Time', time: -4 }
+}
 /*esfmt-ignore-end*/
 
 const daysKeys = keys( days );
@@ -121,6 +125,10 @@ const hours = {
       closes: {
         type: 'string',
         format: 'date-time'
+      },
+      timezone: {
+        type: 'string',
+        enum: keys( timezones )
       }
     }
   }
@@ -169,13 +177,14 @@ export const Schedule = Model.extend( {
   // Add an entry to the hours array for a season, by default the 'default'
   // season. If a special day key is provided, expand it to an array of
   // day keys.
-  addHoursIn: function( day, opens, closes, name = 'default' ) {
+  addHoursIn: function( day, opens, closes, timezone, name = 'default' ) {
     const schedule = this.get( 'schedule' );
     const hours = expand( day ).map( day => {
       return {
         day,
         closes: normalize( closes ),
-        opens: normalize( opens )
+        opens: normalize( opens ),
+        timezone
       };
     } );
     const season = schedule[ name ] || [];
