@@ -24,6 +24,7 @@ import _, { keys, find } from 'lodash';
 //
 // The keys of the enum are ordered to correspond with new Date().getDay().
 // Use keys( days ) to use that index.
+
 /*esfmt-ignore-start*/
 export const days = {
   'sunday':    { display: 'Sunday',    type: 'weekend', next: 'monday'    },
