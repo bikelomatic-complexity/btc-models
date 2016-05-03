@@ -27,16 +27,16 @@ import _, { keys, find } from 'lodash';
 
 /*esfmt-ignore-start*/
 export const days = {
-  'sunday':    { display: 'Sunday',    type: 'weekend', next: 'monday'    },
-  'monday':    { display: 'Monday',    type: 'weekday', next: 'tuesday'   },
-  'tuesday':   { display: 'Tuesday',   type: 'weekday', next: 'wednesday' },
-  'wednesday': { display: 'Wednesday', type: 'weekday', next: 'thursday'  },
-  'thursday':  { display: 'Thursday',  type: 'weekday', next: 'friday'    },
-  'friday':    { display: 'Friday',    type: 'weekday', next: 'saturday'  },
-  'saturday':  { display: 'Saturday',  type: 'weekend', next: 'sunday'    },
+  'sunday': { display: 'Sunday', type: 'weekend', next: 'monday' },
+  'monday': { display: 'Monday', type: 'weekday', next: 'tuesday' },
+  'tuesday': { display: 'Tuesday', type: 'weekday', next: 'wednesday' },
+  'wednesday': { display: 'Wednesday', type: 'weekday', next: 'thursday' },
+  'thursday': { display: 'Thursday', type: 'weekday', next: 'friday' },
+  'friday': { display: 'Friday', type: 'weekday', next: 'saturday' },
+  'saturday': { display: 'Saturday', type: 'weekend', next: 'sunday' },
 
-  'weekend':   { display: 'Weekend',   type: 'compose', next: 'weekday'   },
-  'weekday' :  { display: 'Weekdays',  type: 'compose', next: 'weekend'   }
+  'weekend': { display: 'Weekend', type: 'compose', next: 'weekday' },
+  'weekday': { display: 'Weekdays', type: 'compose', next: 'weekend' }
 };
 export const timezones = {
   'pst': { display: 'PST', longName: 'Pacific Standard Time', time: -8 },
@@ -47,7 +47,7 @@ export const timezones = {
   'cdt': { display: 'CDT', longName: 'Central Daylight Time', time: -5 },
   'est': { display: 'EST', longName: 'Eastern Standard Time', time: -5 },
   'edt': { display: 'EDT', longName: 'Eastern Daylight Time', time: -4 }
-}
+};
 /*esfmt-ignore-end*/
 
 const daysKeys = keys( days );
@@ -185,7 +185,7 @@ export const Schedule = Model.extend( {
         day,
         closes: normalize( closes ),
         opens: normalize( opens ),
-        timezone
+        timezone: timezone
       };
     } );
     const season = schedule[ name ] || [];
