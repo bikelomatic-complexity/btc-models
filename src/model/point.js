@@ -20,7 +20,7 @@
 import { mixinValidation, mergeSchemas } from './validation-mixin';
 import { CouchModel, CouchCollection, keysBetween } from './base';
 
-import { keys, fromPairs, includes } from 'lodash';
+import { keys, fromPairs, includes, assign } from 'lodash';
 import { createObjectURL } from 'blob-util';
 
 import docuri from 'docuri';
@@ -53,8 +53,19 @@ export const Point = CouchModel.extend( {
 
   initialize: function( attributes, options ) {
     CouchModel.prototype.initialize.apply( this, arguments );
-    this.set( 'created_at', new Date().toISOString() );
+
+    const date = new Date().toISOString();
+    this.set( {
+      created_at: date,
+      updated_at: date
+    } );
+
+    this.coverBlob = false;
     this.coverUrl = false;
+  },
+
+  update: function() {
+    this.set( 'updated_at', new Date().toISOString() );
   },
 
   // ## Specify
@@ -116,6 +127,10 @@ export const Point = CouchModel.extend( {
         type: 'string',
         format: 'date-time'
       },
+      updated_at: {
+        type: 'string',
+        format: 'date-time'
+      },
       description: {
         type: 'string'
       },
@@ -128,6 +143,7 @@ export const Point = CouchModel.extend( {
       'location',
       'type',
       'created_at',
+      'updated_at',
       'flag'
     ]
   },
@@ -162,6 +178,7 @@ export const Point = CouchModel.extend( {
       }
     } ).then( blob => {
       if ( blob ) {
+        this.coverBlob = blob;
         this.coverUrl = createObjectURL( blob );
       }
     } ).then( ( ) => {
@@ -177,6 +194,7 @@ export const Point = CouchModel.extend( {
   // The associated object url for the blob will then be available to other
   // functions like store().
   setCover: function( blob ) {
+    this.coverBlob = blob;
     if ( browser ) {
       this.coverUrl = createObjectURL( blob );
     }
@@ -289,6 +307,9 @@ export const Service = Point.extend( {
       website: {
         type: 'string',
         format: 'uri'
+      },
+      updated: {
+        type: 'boolean' // the updated attribute is not required
       }
     },
     required: [
@@ -343,15 +364,30 @@ mixinValidation( Alert );
 export const PointCollection = CouchCollection.extend( {
   initialize: function( models, options ) {
     CouchCollection.prototype.initialize.apply( this, arguments );
+    options = options || {};
+
     this.pouch = {
       options: {
-        allDocs: { include_docs: true, ...keysBetween( 'point/' ) }
+        allDocs: assign(
+          { include_docs: true },
+          options.keys ? { keys: options.keys } : keysBetween( 'point/' )
+        )
       }
     };
 
     const {connect, database} = this;
     this.service = connect ? connect( database, Service ) : Service;
     this.alert = connect ? connect( database, Alert ) : Alert;
+  },
+
+  // This handles the `options.keys` edge cases listed in the
+  // [PouchDB api](https://pouchdb.com/api.html#batch_fetch)
+  parse: function( response, options ) {
+    return response.rows.filter(
+      row => !( row.deleted || row.error )
+    ).map(
+      row => row.doc
+    );
   },
 
   model: function( attributes, options ) {
