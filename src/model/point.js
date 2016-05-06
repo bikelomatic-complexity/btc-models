@@ -398,7 +398,14 @@ export const PointCollection = CouchCollection.extend( {
     };
     const constructor = map[ parts.type ];
     if ( constructor ) {
-      return new constructor( attributes, options );
+      const instance = new constructor( attributes, options );
+
+      if ( options.deindex && instance.has( 'index' ) ) {
+        instance.index = instance.get( 'index' );
+        instance.unset( 'index ' );
+      }
+
+      return instance;
     } else {
       throw 'A point must be either a service or alert';
     }
