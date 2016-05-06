@@ -6,7 +6,6 @@ export { Schedule, days, nextDay } from './model/hours';
 export { User, UserCollection, Login } from './model/user';
 export { Point, Service, Alert, PointCollection, Comment, CommentCollection } from './model/point';
 
-import { User, UserCollection, Login } from './model/user';
 import { Point, Service, Alert, PointCollection, Comment, CommentCollection } from './model/point';
 
 /*esfmt-ignore-start*/
@@ -16,10 +15,7 @@ export const models = [
   Alert,
   PointCollection,
   Comment,
-  CommentCollection,
-  User,
-  UserCollection,
-  Login
+  CommentCollection
 ];
 /*esfmt-ignore-end*/
 
