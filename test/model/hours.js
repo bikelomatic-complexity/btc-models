@@ -49,7 +49,7 @@ describe( 'Schedule', function() {
     } );
     it( 'should add hours to a named season', function() {
       const schedule = new Schedule();
-      schedule.addHoursIn( 'monday', this.opens, this.closes, 'winter' );
+      schedule.addHoursIn( 'monday', this.opens, this.closes, 'pst', 'winter' );
       expect( schedule.attributes )
         .to.have.deep.property( 'schedule.winter[0]' )
         .with.deep.property( 'day', 'monday' );
