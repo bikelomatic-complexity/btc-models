@@ -20,10 +20,16 @@
 import { CouchModel, CouchCollection } from './base';
 import { mixinValidation, mergeSchemas } from './validation-mixin';
 
-// # Credentials Segment
-// This schema validates a user's email and password. Both the User and Login
-// models share this schema segment.
-const credentials = {
+// Base schema for both User and UserRef.
+//
+// This schema includes the fields we want to store along with a user document,
+// including: email, first name, last name, username, verification (the token),
+// and verified (a boolean).
+//
+// We also use CouchDB's 'roles' directly. This schema does not require a
+// password, because after a password is written to a CouchDB document, it
+// cannot then be retrieved (and thus would fail validation).
+const schema = {
   type: 'object',
   additionalProperties: false,
   properties: {
@@ -31,21 +37,44 @@ const credentials = {
       type: 'string',
       format: 'email'
     },
-    password: {
+    first: {
       type: 'string',
-      minLength: 8
+      minLength: 1
+    },
+    last: {
+      type: 'string',
+      minLength: 1
+    },
+    username: {
+      type: 'string',
+      minLength: 3
+    },
+    verification: {
+      type: 'string'
+    },
+    verified: {
+      type: 'boolean'
+    },
+    roles: {
+      type: 'array'
     }
   },
   required: [
     'email',
-    'password'
+    'first',
+    'last',
+    'username',
+    'verified',
+    'roles'
   ]
 };
 
-// # User Model
-// In the domain layer, we uniquely reference Users by their emails. When
-// models are serialized into Couch docs, the `_id` key will be set.
-export const User = CouchModel.extend( {
+// # User Reference
+// We uniquely reference Users by their emails. When models are serialized into
+// CouchDB docs, the `_id` and `name` keys will be set. Use a UserRef When
+// you are retriving user infromation from the server (it will not include
+// the password).
+export const UserRef = CouchModel.extend( {
   idAttribute: 'email',
 
   safeguard: [
@@ -57,40 +86,12 @@ export const User = CouchModel.extend( {
     'salt'
   ],
 
-  schema: mergeSchemas( {}, credentials, {
-    properties: {
-      first: {
-        type: 'string',
-        minLength: 1
-      },
-      last: {
-        type: 'string',
-        minLength: 1
-      },
-      username: {
-        type: 'string',
-        minLength: 3
-      },
-      verification: {
-        type: 'string'
-      },
-      verified: {
-        type: 'boolean',
-        default: false
-      },
-      roles: {
-        type: 'array',
-        default: []
-      }
-    },
-    required: [
-      'first',
-      'last',
-      'username',
-      'verified',
-      'roles'
-    ]
-  } ),
+  defaults: {
+    roles: [],
+    verified: false
+  },
+
+  schema: schema,
 
   // # toJSON
   // Serialize the User object into a doc for CouchDB.
@@ -107,12 +108,12 @@ export const User = CouchModel.extend( {
     } );
   }
 } );
-mixinValidation( User );
+mixinValidation( UserRef );
 
-// # User Collection
+// # User Reference Collection Collection
 // Get all CouchDB users, prefixed by 'org.couchdb.user:'.
-export const UserCollection = CouchCollection.extend( {
-  model: User,
+export const UserRefCollection = CouchCollection.extend( {
+  model: UserRef,
 
   pouch: {
     options: {
@@ -125,7 +126,50 @@ export const UserCollection = CouchCollection.extend( {
   }
 } );
 
+// # User Model
+// Use this model when you want to create new users. This model validates
+// passwords in addition to the other information.
+export const User = UserRef.extend( {
+  schema: mergeSchemas( {}, UserRef.prototype.schema, {
+    properties: {
+      password: {
+        type: 'string',
+        minLength: 8
+      }
+    },
+    required: [
+      'password'
+    ]
+  } )
+} );
+mixinValidation( User );
+
+// # User Collection
+// Get all CouchDB users, prefixed by 'org.couchdb.user:'.
+export const UserCollection = UserRefCollection.extend( {
+  model: User
+} );
+
 // # Login model
 // Just a user's email and password
-export const Login = CouchModel.extend( { schema: credentials } );
+export const Login = CouchModel.extend( {
+  schema: {
+    type: 'object',
+    additionalProperties: false,
+    properties: {
+      email: {
+        type: 'string',
+        format: 'email'
+      },
+      password: {
+        type: 'string',
+        minLength: 8
+      }
+    },
+    required: [
+      'email',
+      'password'
+    ]
+  }
+} );
 mixinValidation( Login );
