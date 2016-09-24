@@ -44,6 +44,7 @@
     "lodash": "^4.6.1",
     "ngeohash": "^0.6.0",
     "node-uuid": "^1.4.7",
+    "polyfill-promise": "^4.0.1",
     "pouchdb": "^5.3.1",
     "to-id": "^1.0.5"
   },

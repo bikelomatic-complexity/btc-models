@@ -30,6 +30,8 @@ import uuid from 'node-uuid';
 
 const browser = ( typeof window !== 'undefined' );
 
+var Promise = require('polyfill-promise');
+
 // # Point Model
 // The point represents a location on the map with associated metadata, geodata,
 // and user provided data. The point is the base shared by services and alerts.
