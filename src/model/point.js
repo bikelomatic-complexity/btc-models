@@ -484,9 +484,6 @@ export const Comment = CouchModel.extend( {
     type: 'object',
     additionalProperties: false,
     properties: {
-      username: {
-        'type': 'string'
-      },
       text: {
         'type': 'string',
         'maxLength': COMMENT_MAX_LENGTH
@@ -501,7 +498,6 @@ export const Comment = CouchModel.extend( {
       }
     },
     required: [
-      'username',
       'text',
       'rating',
       'uuid'

@@ -23,7 +23,8 @@ import { mixinValidation, mergeSchemas } from './validation-mixin';
 // Base schema for both User and UserRef.
 //
 // This schema includes the fields we want to store along with a user document,
-// including: email, first name, last name, username, verification (the token),
+// including: email, first name, last name, username <NOW REMOVED as of Oct 2nd, 2016>, 
+// verification (the token),
 // and verified (a boolean).
 //
 // We also use CouchDB's 'roles' directly. This schema does not require a
@@ -45,10 +46,6 @@ const schema = {
       type: 'string',
       minLength: 1
     },
-    username: {
-      type: 'string',
-      minLength: 3
-    },
     verification: {
       type: 'string'
     },
@@ -63,7 +60,6 @@ const schema = {
     'email',
     'first',
     'last',
-    'username',
     'verified',
     'roles'
   ]
