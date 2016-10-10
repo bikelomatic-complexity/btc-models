@@ -10,7 +10,7 @@
     "doc": "docco src/model/*.js",
     "prebuild": "npm run clean",
     "build": "babel src -d lib --copy-files",
-    "clean": "rm -r lib/",
+    "clean": "touch lib && rm -r lib",
     "//preunit": "babel test -d .test --copy-files",
     "unit": "mocha \"test/**/*.js\" --require \"./shim\" --compilers js:babel-core/register",
     "test": "nyc npm run unit",
