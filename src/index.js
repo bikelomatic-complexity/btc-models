@@ -3,7 +3,7 @@ export { serviceTypes, alertTypes, display } from './model/point';
 
 export { Schedule, days, nextDay, timezones } from './model/hours';
 
-export { User, UserCollection, UserRef, UserRefCollection, Login } from './model/user';
+export { User, UserCollection, UserRef, UserRefCollection, Login, Forgot, Reset } from './model/user';
 export { Point, Service, Alert, PointCollection, Comment, CommentCollection } from './model/point';
 
 import { Point, Service, Alert, PointCollection, Comment, CommentCollection } from './model/point';

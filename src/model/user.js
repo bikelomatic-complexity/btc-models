@@ -23,7 +23,7 @@ import { mixinValidation, mergeSchemas } from './validation-mixin';
 // Base schema for both User and UserRef.
 //
 // This schema includes the fields we want to store along with a user document,
-// including: email, first name, last name, username <NOW REMOVED as of Oct 2nd, 2016>, 
+// including: email, first name, last name, username <NOW REMOVED as of Oct 2nd, 2016>,
 // verification (the token),
 // and verified (a boolean).
 //
@@ -169,3 +169,41 @@ export const Login = CouchModel.extend( {
   }
 } );
 mixinValidation( Login );
+
+// # Forgot Password model
+// Just a user's email
+export const Forgot = CouchModel.extend( {
+  schema: {
+    type: 'object',
+    additionalProperties: false,
+    properties: {
+      email: {
+        type: 'string',
+        format: 'email'
+      }
+    },
+    required: [
+      'email'
+    ]
+  }
+} );
+mixinValidation( Forgot );
+
+// # Reset Password model
+// Just a user's password and confirm password
+export const Reset = CouchModel.extend( {
+  schema: {
+    type: 'object',
+    additionalProperties: false,
+    properties: {
+      password: {
+        type: 'string',
+        minLength: 8
+      }
+    },
+    required: [
+      'password'
+    ]
+  }
+} );
+mixinValidation( Reset );
