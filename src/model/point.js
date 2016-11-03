@@ -221,13 +221,27 @@ export const Point = CouchModel.extend( {
   uri: pointId,
 
   for: id => {
-    const {type} = pointId( id );
+    const pointIdComponents = pointId( id );
+    var type = '';
+    if (pointIdComponents != false) {
+    	// This was parsed as a point.
+    	type = pointIdComponents.type;
+    } else {
+    	// See if this is maybe a comment.
+    	const commentIdComponents = commentId(id);
+    	if (commentId != false) {
+    		// This is a comment if it parsed.
+    		type = 'comment';
+    	}
+    }
     if ( type === 'service' ) {
       return new Service( { _id: id } );
     } else if ( type === 'alert' ) {
       return new Alert( { _id: id } );
+    } else if ( type === 'comment' ) {
+      return new Comment( { _id: id } );
     } else {
-      throw 'A point must either be a service or alert';
+      throw 'A point must be a service, alert, or comment';
     }
   }
 } );
@@ -367,8 +381,7 @@ mixinValidation( Alert );
 // A heterogeneous collection of services and alerts. PouchDB is able to fetch
 // this collection by looking for all keys starting with 'point/'.
 //
-// This also has the effect of fetching comments for points. TODO: handle
-// `Comment` in the model function.
+// This also has the effect of fetching comments for points.
 //
 // A connected PointCollection must be able to generate connected Alerts or
 // Services on demands. Therefore, if PointCollection is connected, connect
@@ -390,6 +403,7 @@ export const PointCollection = CouchCollection.extend( {
     const {connect, database} = this;
     this.service = connect ? connect( database, Service ) : Service;
     this.alert = connect ? connect( database, Alert ) : Alert;
+    this.comment = connect ? connect( database, Comment ) : Comment;
   },
 
   // This handles the `options.keys` edge cases listed in the
@@ -403,12 +417,25 @@ export const PointCollection = CouchCollection.extend( {
   },
 
   model: function( attributes, options ) {
-    const parts = pointId( attributes._id );
+    const pointIdComponents = pointId( attributes._id );
+    var type = '';
+    if (pointIdComponents != false) {
+    	// This was parsed as a point.
+    	type = pointIdComponents.type;
+    } else {
+    	// See if this is maybe a comment.
+    	const commentIdComponents = commentId(attributes._id);
+    	if (commentId != false) {
+    		// This is a comment if it parsed.
+    		type = 'comment';
+    	}
+    }
     const map = {
       'service': options.collection.service,
-      'alert': options.collection.alert
+      'alert': options.collection.alert,
+      'comment': options.collection.comment
     };
-    const constructor = map[ parts.type ];
+    const constructor = map[ type ];
     if ( constructor ) {
       const instance = new constructor( attributes, options );
 
@@ -419,7 +446,7 @@ export const PointCollection = CouchCollection.extend( {
 
       return instance;
     } else {
-      throw 'A point must be either a service or alert';
+      throw 'A point must be a service, alert, or comment';
     }
   },
 
@@ -468,9 +495,7 @@ export function display( type ) {
 //  1. The entire id of the related point
 //  2. The string 'comment/'
 //  3. A time based UUID to uniquely identify comments
-//
-// We don't use `docuri` for the comment model uris because we don't have to
-// parse them.
+const commentId = docuri.route( 'point/:type/:name/:geohash/comment/:uuid' );
 
 const COMMENT_MAX_LENGTH = 140;
 export const Comment = CouchModel.extend( {
@@ -484,7 +509,13 @@ export const Comment = CouchModel.extend( {
       attributes.uuid = uuid.v1();
     }
     if ( !attributes._id && options.pointId ) {
-      attributes._id = options.pointId + '/comment/' + attributes.uuid;
+    	const pointIdComponents = pointId(options.pointId);
+      attributes._id = commentId( {
+          type: pointIdComponents.type,
+          name: pointIdComponents.name,
+          geohash: pointIdComponents.geohash,
+          uuid: attributes.uuid
+       } );
     }
     CouchModel.apply( this, arguments );
   },
