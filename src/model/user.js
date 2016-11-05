@@ -190,7 +190,7 @@ export const Forgot = CouchModel.extend( {
 mixinValidation( Forgot );
 
 // # Reset Password model
-// Just a user's password and confirm password
+// Just a user's password, confirm password, and verification token
 export const Reset = CouchModel.extend( {
   schema: {
     type: 'object',
@@ -199,10 +199,14 @@ export const Reset = CouchModel.extend( {
       password: {
         type: 'string',
         minLength: 8
+      },
+      verification: {
+        type: 'string'
       }
     },
     required: [
-      'password'
+      'password',
+      'verification'
     ]
   }
 } );
