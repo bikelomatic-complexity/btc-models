@@ -2,7 +2,8 @@ export { connect, connectMut } from './connect';
 export { serviceTypes, alertTypes, display } from './model/point';
 
 export { Schedule, days, nextDay, timezones } from './model/hours';
-export { User, UserCollection, UserRef, UserRefCollection, Login } from './model/user';
+
+export { User, UserCollection, UserRef, UserRefCollection, Login, Forgot, Reset } from './model/user';
 export { Point, Service, Alert, PointCollection } from './model/point';
 export { Comment, CommentCollection } from './model/comment';
 
