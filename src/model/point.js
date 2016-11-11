@@ -50,6 +50,8 @@ var Promise = require('polyfill-promise');
 //  4. The point's geohash
 export const pointId = docuri.route( 'point/:type/:name/:geohash' );
 
+const COMMENT_MAX_LENGTH = 140;
+
 export const Point = CouchModel.extend( {
   idAttribute: '_id',
 
@@ -146,6 +148,32 @@ export const Point = CouchModel.extend( {
       },
       flag: {
         type: 'boolean'
+      },
+      comments: {
+        type: 'array',
+        items: {
+          type: 'object',
+          additionalProperties: false,
+          properties: {
+            text: {
+              'type': 'string',
+              'maxLength': COMMENT_MAX_LENGTH
+            },
+            rating: {
+              type: 'integer',
+              minimum: 1,
+              maximum: 5
+            },
+            uuid: {
+              type: 'string'
+            }
+          },
+          required: [
+            'text',
+            'rating',
+            'uuid'
+          ]
+        }
       }
     },
     required: [
