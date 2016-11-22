@@ -156,6 +156,13 @@ export const Point = CouchModel.extend( {
           type: 'object',
           additionalProperties: false,
           properties: {
+            user: {
+              type: 'string'
+            },
+            date: {
+              type: 'string',
+              format: 'date-time'
+            },
             text: {
               'type': 'string',
               'maxLength': COMMENT_MAX_LENGTH
@@ -170,6 +177,8 @@ export const Point = CouchModel.extend( {
             }
           },
           required: [
+            'user',
+            'date',
             'text',
             'rating',
             'uuid'
