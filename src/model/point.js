@@ -110,7 +110,7 @@ export const Point = CouchModel.extend( {
 
   defaults: function() {
     return {
-      flag: false,
+      flagged_by: [],
       updated_by: 'unknown',
       comments: []
     };
@@ -145,11 +145,14 @@ export const Point = CouchModel.extend( {
       updated_by: {
         type: 'string',
       },
+      flagged_by:{
+        type: 'array',
+         items: {
+          type: 'string'
+        }
+      },
       description: {
         type: 'string'
-      },
-      flag: {
-        type: 'boolean'
       },
       comments: {
         type: 'array',
@@ -195,7 +198,7 @@ export const Point = CouchModel.extend( {
       'created_at',
       'updated_at',
       'updated_by',	/* Added: To attach points to users via their _id */
-      'flag',
+      'flagged_by',
       'comments'
     ]
   },
