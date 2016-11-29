@@ -1,4 +1,4 @@
-/* btc-app-server -- Server for the Bicycle Touring Companion
+﻿/* btc-app-server -- Server for the Bicycle Touring Companion
  * Copyright © 2016 Adventure Cycling Association
  *
  * This file is part of btc-app-server.
@@ -23,7 +23,8 @@ import { mixinValidation, mergeSchemas } from './validation-mixin';
 // Base schema for both User and UserRef.
 //
 // This schema includes the fields we want to store along with a user document,
-// including: email, first name, last name, username, verification (the token),
+// including: email, first name, last name, username <NOW REMOVED as of Oct 2nd, 2016>,
+// verification (the token),
 // and verified (a boolean).
 //
 // We also use CouchDB's 'roles' directly. This schema does not require a
@@ -45,10 +46,6 @@ const schema = {
       type: 'string',
       minLength: 1
     },
-    username: {
-      type: 'string',
-      minLength: 3
-    },
     verification: {
       type: 'string'
     },
@@ -63,7 +60,6 @@ const schema = {
     'email',
     'first',
     'last',
-    'username',
     'verified',
     'roles'
   ]
@@ -130,7 +126,7 @@ export const UserRefCollection = CouchCollection.extend( {
 // Use this model when you want to create new users. This model validates
 // passwords in addition to the other information.
 export const User = UserRef.extend( {
-  schema: mergeSchemas( {}, UserRef.prototype.schema, {
+  schema: mergeSchemas( UserRef.prototype.schema, {
     properties: {
       password: {
         type: 'string',
@@ -173,3 +169,45 @@ export const Login = CouchModel.extend( {
   }
 } );
 mixinValidation( Login );
+
+// # Forgot Password model
+// Just a user's email
+export const Forgot = CouchModel.extend( {
+  schema: {
+    type: 'object',
+    additionalProperties: false,
+    properties: {
+      email: {
+        type: 'string',
+        format: 'email'
+      }
+    },
+    required: [
+      'email'
+    ]
+  }
+} );
+mixinValidation( Forgot );
+
+// # Reset Password model
+// Just a user's password, confirm password, and verification token
+export const Reset = CouchModel.extend( {
+  schema: {
+    type: 'object',
+    additionalProperties: false,
+    properties: {
+      password: {
+        type: 'string',
+        minLength: 8
+      },
+      verification: {
+        type: 'string'
+      }
+    },
+    required: [
+      'password',
+      'verification'
+    ]
+  }
+} );
+mixinValidation( Reset );
